@@ -52,6 +52,45 @@ function responsesToSelections(
   }));
 }
 
+function isUnansweredOrBlank(
+  responses: QuestionResponses,
+  questionId: string,
+): boolean {
+  const state = getQuestionResponseState(responses, questionId);
+  return state === "unanswered" || state === "blank";
+}
+
+function findUnansweredIndices(
+  questions: TestQuestion[],
+  responses: QuestionResponses,
+): number[] {
+  return questions.reduce<number[]>((indices, question, index) => {
+    if (isUnansweredOrBlank(responses, question.id)) {
+      indices.push(index);
+    }
+
+    return indices;
+  }, []);
+}
+
+function findNextUnansweredIndex(
+  questions: TestQuestion[],
+  responses: QuestionResponses,
+  fromIndex: number,
+): number | null {
+  const indices = findUnansweredIndices(questions, responses);
+  return indices.find((index) => index > fromIndex) ?? null;
+}
+
+function findPreviousUnansweredIndex(
+  questions: TestQuestion[],
+  responses: QuestionResponses,
+  fromIndex: number,
+): number | null {
+  const indices = findUnansweredIndices(questions, responses);
+  return [...indices].reverse().find((index) => index < fromIndex) ?? null;
+}
+
 export function TestPageContent({ autoStartCount }: TestPageContentProps) {
   const { t } = useI18n();
   const { profile } = useProfile();
@@ -70,6 +109,8 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reviewUnansweredMode, setReviewUnansweredMode] = useState(false);
+  const [unansweredNotice, setUnansweredNotice] = useState<string | null>(null);
 
   const currentQuestion = questions[currentIndex] ?? null;
   const isLastQuestion = currentIndex === questions.length - 1;
@@ -110,6 +151,8 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
         setQuestions(started.data.questions);
         setResponses({});
         setCurrentIndex(0);
+        setReviewUnansweredMode(false);
+        setUnansweredNotice(null);
         setPhase("taking");
       } catch (startError) {
         setLoadError(mapTestError(startError, t));
@@ -129,6 +172,46 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
     void handleStart(autoStartCount);
   }, [autoStartCount, handleStart]);
 
+  function finishReviewUnanswered() {
+    setReviewUnansweredMode(false);
+    setUnansweredNotice(t("test.noUnansweredLeft"));
+    setCurrentIndex(Math.max(questions.length - 1, 0));
+  }
+
+  function advanceAfterReviewAction(nextResponses: QuestionResponses) {
+    const nextIndex = findNextUnansweredIndex(
+      questions,
+      nextResponses,
+      currentIndex,
+    );
+
+    if (nextIndex !== null) {
+      setUnansweredNotice(null);
+      setCurrentIndex(nextIndex);
+      return;
+    }
+
+    finishReviewUnanswered();
+  }
+
+  function startReviewUnanswered() {
+    const indices = findUnansweredIndices(questions, responses);
+
+    if (!indices.length) {
+      setUnansweredNotice(t("test.noUnansweredLeft"));
+      return;
+    }
+
+    setUnansweredNotice(null);
+    setReviewUnansweredMode(true);
+    setCurrentIndex(indices[0]);
+  }
+
+  function exitReviewUnanswered() {
+    setReviewUnansweredMode(false);
+    setUnansweredNotice(null);
+  }
+
   function updateResponse(questionId: string, value: string | null) {
     setResponses((previous) => ({
       ...previous,
@@ -141,7 +224,17 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
       return;
     }
 
+    const nextResponses = {
+      ...responses,
+      [currentQuestion.id]: letter,
+    };
+
     updateResponse(currentQuestion.id, letter);
+
+    if (reviewUnansweredMode) {
+      advanceAfterReviewAction(nextResponses);
+      return;
+    }
 
     if (!isLastQuestion) {
       advanceToNext();
@@ -153,7 +246,17 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
       return;
     }
 
+    const nextResponses = {
+      ...responses,
+      [currentQuestion.id]: null,
+    };
+
     updateResponse(currentQuestion.id, null);
+
+    if (reviewUnansweredMode) {
+      advanceAfterReviewAction(nextResponses);
+      return;
+    }
 
     if (!isLastQuestion) {
       advanceToNext();
@@ -161,6 +264,20 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
   }
 
   function handlePrevious() {
+    if (reviewUnansweredMode) {
+      const previousIndex = findPreviousUnansweredIndex(
+        questions,
+        responses,
+        currentIndex,
+      );
+
+      if (previousIndex !== null) {
+        setCurrentIndex(previousIndex);
+      }
+
+      return;
+    }
+
     setCurrentIndex((index) => Math.max(index - 1, 0));
   }
 
@@ -169,8 +286,18 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
       return;
     }
 
+    const nextResponses =
+      currentResponseState === "unanswered"
+        ? { ...responses, [currentQuestion.id]: null }
+        : responses;
+
     if (currentResponseState === "unanswered") {
       updateResponse(currentQuestion.id, null);
+    }
+
+    if (reviewUnansweredMode) {
+      advanceAfterReviewAction(nextResponses);
+      return;
     }
 
     if (!isLastQuestion) {
@@ -215,6 +342,8 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
     setQuestions([]);
     setResponses({});
     setCurrentIndex(0);
+    setReviewUnansweredMode(false);
+    setUnansweredNotice(null);
     setResult(null);
     setLoadError(null);
     setSubmitError(null);
@@ -291,7 +420,7 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
       {phase === "taking" && currentQuestion ? (
         <>
           <Card>
-            <div className="flex items-center justify-between gap-3 text-sm text-text-secondary">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary">
               <span className="font-medium">
                 {t("test.questionProgress", {
                   current: currentIndex + 1,
@@ -300,6 +429,28 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
               </span>
               <span>{t("test.answeredCount", { count: answeredCount })}</span>
             </div>
+
+            {reviewUnansweredMode ? (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-medium text-selection-from">
+                  {t("test.reviewingUnanswered")}
+                </p>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="px-0"
+                  onClick={exitReviewUnanswered}
+                >
+                  {t("test.backToTest")}
+                </Button>
+              </div>
+            ) : null}
+
+            {unansweredNotice ? (
+              <Card tone="muted" padding="sm" className="mt-3 shadow-none">
+                <p className="text-sm text-text-secondary">{unansweredNotice}</p>
+              </Card>
+            ) : null}
 
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-muted">
               <div
@@ -351,14 +502,21 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
               {t("test.leaveBlank")}
             </Button>
 
-            {isLastQuestion &&
-            (currentResponseState === "selected" ||
-              currentResponseState === "blank") ? (
-              <Card tone="muted" padding="sm" className="mt-4 shadow-none">
-                <p className="text-sm text-text-secondary">
-                  {t("test.reviewBeforeSubmit")}
-                </p>
-              </Card>
+            {isLastQuestion && !reviewUnansweredMode ? (
+              <div className="mt-4 space-y-3">
+                <Card tone="muted" padding="sm" className="shadow-none">
+                  <p className="text-sm text-text-secondary">
+                    {t("test.reviewBeforeSubmit")}
+                  </p>
+                </Card>
+                <Button
+                  variant="secondary"
+                  onClick={startReviewUnanswered}
+                  fullWidth
+                >
+                  {t("test.reviewUnanswered")}
+                </Button>
+              </div>
             ) : null}
           </Card>
 
@@ -387,7 +545,7 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
               <Button
                 variant="secondary"
                 onClick={handlePrevious}
-                disabled={currentIndex === 0}
+                disabled={!reviewUnansweredMode && currentIndex === 0}
                 className="flex-1"
               >
                 {t("test.previous")}
@@ -395,7 +553,7 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
               <Button
                 variant="secondary"
                 onClick={handleNext}
-                disabled={isLastQuestion}
+                disabled={!reviewUnansweredMode && isLastQuestion}
                 className="flex-1"
               >
                 {t("test.next")}

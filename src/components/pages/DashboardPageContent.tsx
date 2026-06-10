@@ -87,14 +87,21 @@ export function DashboardPageContent({
           </h2>
           {dashboardStats.mostFailedTopics.length ? (
             <ul className="mt-3 space-y-2 text-sm text-text-secondary">
-              {dashboardStats.mostFailedTopics.map((topic) => (
+              {dashboardStats.mostFailedTopics.map((item) => (
                 <li
-                  key={topic.topic}
+                  key={item.topic}
                   className="flex items-center justify-between gap-3"
                 >
-                  <span>{topic.topic}</span>
-                  <span className="font-semibold text-text-primary">
-                    {topic.count}
+                  <span>
+                    {item.topicTitle
+                      ? t("dashboard.failedTopicWithTitle", {
+                          topic: item.topic,
+                          title: item.topicTitle,
+                        })
+                      : item.topic}
+                  </span>
+                  <span className="shrink-0 font-semibold text-text-primary">
+                    {item.count}
                   </span>
                 </li>
               ))}

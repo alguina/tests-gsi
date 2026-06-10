@@ -29,7 +29,7 @@ export type DashboardStats = {
   totalQuestionsAnswered: number;
   globalAccuracy: number | null;
   averageNetScore: number | null;
-  mostFailedTopics: Array<{ topic: string; count: number }>;
+  mostFailedTopics: Array<{ topic: string; topicTitle: string | null; count: number }>;
 };
 
 export type TopicSummary = {
@@ -131,7 +131,7 @@ export async function getDashboardStats(
         .eq("user_id", userId),
       supabase
         .from("attempts")
-        .select("question_id, is_correct, is_blank, questions(topic)")
+        .select("question_id, is_correct, is_blank, questions(topic, block)")
         .eq("user_id", userId)
         .eq("is_correct", false)
         .eq("is_blank", false),
@@ -145,21 +145,45 @@ export async function getDashboardStats(
     (attempt) => attempt.is_correct,
   );
 
-  const topicFailures = new Map<string, number>();
+  const topicFailures = new Map<
+    string,
+    { count: number; titles: Map<string, number> }
+  >();
+
   for (const attempt of failedTopicsResult.data ?? []) {
-    const topic = String(
-      (attempt.questions as { topic?: string | null } | null)?.topic ?? "",
-    ).trim();
+    const question = attempt.questions as {
+      topic?: string | null;
+      block?: string | null;
+    } | null;
+
+    const topic = String(question?.topic ?? "").trim();
+    const block = String(question?.block ?? "").trim();
 
     if (!topic) {
       continue;
     }
 
-    topicFailures.set(topic, (topicFailures.get(topic) ?? 0) + 1);
+    const current = topicFailures.get(topic) ?? {
+      count: 0,
+      titles: new Map<string, number>(),
+    };
+    current.count += 1;
+
+    if (block) {
+      current.titles.set(block, (current.titles.get(block) ?? 0) + 1);
+    }
+
+    topicFailures.set(topic, current);
   }
 
   const mostFailedTopics = [...topicFailures.entries()]
-    .map(([topic, count]) => ({ topic, count }))
+    .map(([topic, stats]) => {
+      const topicTitle =
+        [...stats.titles.entries()].sort((left, right) => right[1] - left[1])[0]
+          ?.[0] ?? null;
+
+      return { topic, topicTitle, count: stats.count };
+    })
     .sort((left, right) => right.count - left.count)
     .slice(0, 5);
 

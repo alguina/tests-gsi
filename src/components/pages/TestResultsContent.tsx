@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { StatCard } from "@/components/ui/StatCard";
 import { useI18n } from "@/lib/i18n/useI18n";
+import { getAnswerTextByLetter } from "@/lib/testAnswerDisplay";
 import { formatScore } from "@/lib/stats/formatScore";
-import type { TestResult } from "@/lib/testSession";
+import type { TestQuestionResult, TestResult } from "@/lib/testSession";
 
 type TestResultsContentProps = {
   result: TestResult;
@@ -67,50 +68,11 @@ export function TestResultsContent({
           {t("test.correction")}
         </h3>
         {result.questions.map((question, index) => (
-          <Card
+          <QuestionCorrectionCard
             key={question.questionId}
-            as="article"
-            tone={
-              question.isBlank
-                ? "warning"
-                : question.isCorrect
-                  ? "success"
-                  : "danger"
-            }
-          >
-            <div className="flex items-start gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-text-secondary">
-                {index + 1}
-              </span>
-              <div className="min-w-0 space-y-2">
-                <h4 className="font-semibold leading-6 text-text-primary">
-                  {question.text}
-                </h4>
-                {question.metadata ? (
-                  <p className="text-sm text-text-secondary">
-                    {question.metadata}
-                  </p>
-                ) : null}
-                <p className="text-sm text-text-primary">
-                  <span className="font-semibold">{t("test.myAnswer")}</span>{" "}
-                  {question.isBlank
-                    ? t("test.blank")
-                    : question.selectedLetter ?? t("test.blank")}
-                </p>
-                <p className="text-sm text-text-primary">
-                  <span className="font-semibold">{t("test.correctAnswer")}</span>{" "}
-                  {question.correctLetter || t("test.unknown")}
-                </p>
-                <p className="text-sm font-semibold text-text-primary">
-                  {question.isBlank
-                    ? t("test.leftBlank")
-                    : question.isCorrect
-                      ? t("test.resultCorrect")
-                      : t("test.resultWrong")}
-                </p>
-              </div>
-            </div>
-          </Card>
+            question={question}
+            index={index}
+          />
         ))}
       </div>
 
@@ -125,4 +87,93 @@ export function TestResultsContent({
       )}
     </section>
   );
+}
+
+function QuestionCorrectionCard({
+  question,
+  index,
+}: {
+  question: TestQuestionResult;
+  index: number;
+}) {
+  const { t } = useI18n();
+
+  const myAnswerDisplay = formatAnswerLine(
+    question,
+    question.selectedLetter,
+    question.isBlank,
+    t,
+  );
+
+  const correctAnswerDisplay = formatAnswerLine(
+    question,
+    question.correctLetter,
+    false,
+    t,
+  );
+
+  return (
+    <Card
+      as="article"
+      tone={
+        question.isBlank
+          ? "warning"
+          : question.isCorrect
+            ? "success"
+            : "danger"
+      }
+    >
+      <div className="flex items-start gap-3">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-text-secondary">
+          {index + 1}
+        </span>
+        <div className="min-w-0 space-y-2">
+          <h4 className="font-semibold leading-6 text-text-primary">
+            {question.text}
+          </h4>
+          {question.metadata ? (
+            <p className="text-sm text-text-secondary">{question.metadata}</p>
+          ) : null}
+          <p className="text-sm text-text-primary">
+            <span className="font-semibold">{t("test.myAnswer")}</span>{" "}
+            {myAnswerDisplay}
+          </p>
+          <p className="text-sm text-text-primary">
+            <span className="font-semibold">{t("test.correctAnswer")}</span>{" "}
+            {correctAnswerDisplay}
+          </p>
+          <p className="text-sm font-semibold text-text-primary">
+            {question.isBlank
+              ? t("test.leftBlank")
+              : question.isCorrect
+                ? t("test.resultCorrect")
+                : t("test.resultWrong")}
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function formatAnswerLine(
+  question: TestQuestionResult,
+  letter: string | null,
+  isBlank: boolean,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
+  if (isBlank) {
+    return t("test.blankAnswer");
+  }
+
+  if (!letter) {
+    return t("test.blankAnswer");
+  }
+
+  const text = getAnswerTextByLetter(question.answers, letter);
+
+  if (text) {
+    return t("test.answerLetterAndText", { letter, text });
+  }
+
+  return letter;
 }
