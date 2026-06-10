@@ -38,29 +38,51 @@ create table if not exists answers (
 create index if not exists questions_source_id_idx on questions (source_id);
 create index if not exists answers_question_id_idx on answers (question_id);
 
+create table if not exists users (
+  id uuid primary key,
+  name text not null,
+  created_at timestamptz not null default now()
+);
+
+insert into users (id, name)
+values ('8f3c2e1a-9b4d-4f6e-a7c8-9d0e1f2a3b4c', 'Alex')
+on conflict (id) do nothing;
+
 create table if not exists test_sessions (
   id uuid primary key default gen_random_uuid(),
-  started_at timestamptz not null default now(),
-  finished_at timestamptz,
+  user_id uuid not null references users(id),
+  mode text not null,
+  title text,
   total_questions integer not null,
   correct_count integer not null default 0,
   wrong_count integer not null default 0,
   blank_count integer not null default 0,
-  net_score numeric not null default 0
+  net_score numeric not null default 0,
+  started_at timestamptz not null default now(),
+  completed_at timestamptz,
+  created_at timestamptz not null default now()
 );
 
 create table if not exists attempts (
   id uuid primary key default gen_random_uuid(),
   session_id uuid not null references test_sessions(id) on delete cascade,
+  user_id uuid not null references users(id),
   question_id uuid not null references questions(id) on delete cascade,
+  selected_answer_id uuid references answers(id),
   selected_letter text,
+  correct_answer_id uuid references answers(id),
+  correct_letter text,
   is_correct boolean not null default false,
   is_blank boolean not null default false,
+  answered_at timestamptz not null default now(),
   created_at timestamptz not null default now(),
   unique (session_id, question_id)
 );
 
+create index if not exists test_sessions_user_id_idx on test_sessions (user_id);
+create index if not exists test_sessions_completed_at_idx on test_sessions (completed_at);
 create index if not exists attempts_session_id_idx on attempts (session_id);
+create index if not exists attempts_user_id_idx on attempts (user_id);
 create index if not exists attempts_question_id_idx on attempts (question_id);
 
 -- Returns questions that have at least one correct answer, in random order.
@@ -104,6 +126,7 @@ $$;
 alter table public.sources disable row level security;
 alter table public.questions disable row level security;
 alter table public.answers disable row level security;
+alter table public.users disable row level security;
 alter table public.test_sessions disable row level security;
 alter table public.attempts disable row level security;
 
@@ -111,6 +134,7 @@ grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on public.sources to anon, authenticated;
 grant select, insert, update, delete on public.questions to anon, authenticated;
 grant select, insert, update, delete on public.answers to anon, authenticated;
+grant select, insert, update, delete on public.users to anon, authenticated;
 grant select, insert, update, delete on public.test_sessions to anon, authenticated;
 grant select, insert, update, delete on public.attempts to anon, authenticated;
 grant execute on function public.get_random_questions(integer) to anon, authenticated;

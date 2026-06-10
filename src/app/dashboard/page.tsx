@@ -1,8 +1,13 @@
 import { DashboardPageContent } from "@/components/pages/DashboardPageContent";
-import { getHomeStudyStats } from "@/lib/studyMetrics";
+import { getDashboardStats, getHomeStudyStats } from "@/lib/studyMetrics";
 
 export default async function DashboardPage() {
-  const stats = await getHomeStudyStats();
+  const [stats, dashboardStats] = await Promise.all([
+    getHomeStudyStats(),
+    getDashboardStats(),
+  ]);
 
-  return <DashboardPageContent stats={stats} />;
+  return (
+    <DashboardPageContent stats={stats} dashboardStats={dashboardStats} />
+  );
 }

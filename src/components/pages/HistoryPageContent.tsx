@@ -32,14 +32,18 @@ export function HistoryPageContent({ sessions }: HistoryPageContentProps) {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <h2 className="font-semibold text-text-primary">
-                    {t("history.questionSession", {
-                      count: session.totalQuestions,
-                    })}
+                    {session.title ??
+                      t("history.questionSession", {
+                        count: session.totalQuestions,
+                      })}
                   </h2>
                   <p className="mt-1 text-sm text-text-muted">
-                    {session.finishedAt
-                      ? formatDate(session.finishedAt)
+                    {session.completedAt
+                      ? formatDate(session.completedAt)
                       : t("history.inProgress")}
+                  </p>
+                  <p className="mt-1 text-xs uppercase tracking-wide text-text-muted">
+                    {t("history.mode", { mode: session.mode })}
                   </p>
                 </div>
                 <p className="text-lg font-semibold text-text-primary">
@@ -55,12 +59,19 @@ export function HistoryPageContent({ sessions }: HistoryPageContentProps) {
                   blank: session.blankCount,
                 })}
               </p>
+              <Button
+                href={`/test/session/${session.id}`}
+                variant="secondary"
+                className="mt-4"
+              >
+                {t("history.viewResults")}
+              </Button>
             </Card>
           ))}
         </section>
       ) : (
         <EmptyState
-          title={t("history.noSessionsYet")}
+          title={t("history.empty")}
           description={t("history.noSessionsDescription")}
           action={<Button href="/take-test">{t("home.startTraining")}</Button>}
         />
