@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useI18n } from "@/lib/i18n/useI18n";
-import { mapTestError } from "@/lib/testErrors";
+import { mapTestError, mapTestErrorCode } from "@/lib/testErrors";
 import {
   TEST_QUESTION_COUNTS,
   type TestQuestion,
@@ -97,8 +97,13 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
 
       try {
         const started = await startRandomTest(count);
-        setSessionId(started.sessionId);
-        setQuestions(started.questions);
+        if (!started.ok) {
+          setLoadError(mapTestErrorCode(started.code, t));
+          return;
+        }
+
+        setSessionId(started.data.sessionId);
+        setQuestions(started.data.questions);
         setResponses({});
         setCurrentIndex(0);
         setPhase("taking");
@@ -184,7 +189,12 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
         responsesToSelections(questions, responses),
       );
 
-      setResult(submission);
+      if (!submission.ok) {
+        setSubmitError(mapTestErrorCode(submission.code, t));
+        return;
+      }
+
+      setResult(submission.data);
       setPhase("results");
     } catch (submitFailure) {
       setSubmitError(mapTestError(submitFailure, t));

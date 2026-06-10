@@ -2,37 +2,57 @@ import type { useI18n } from "@/lib/i18n/useI18n";
 
 type TranslateFn = ReturnType<typeof useI18n>["t"];
 
-export function mapTestError(error: unknown, t: TranslateFn): string {
-  if (!(error instanceof Error)) {
-    return t("common.error");
-  }
-
-  const message = error.message;
-
-  if (message === "NO_QUESTIONS_AVAILABLE") {
+export function mapTestErrorCode(code: string, t: TranslateFn): string {
+  if (code === "NO_QUESTIONS_AVAILABLE") {
     return t("test.errorNoQuestions");
   }
 
-  if (message.startsWith("INSUFFICIENT_QUESTIONS:")) {
-    const available = message.split(":")[1] ?? "0";
+  if (code.startsWith("INSUFFICIENT_QUESTIONS:")) {
+    const available = code.split(":")[1] ?? "0";
     return t("test.errorInsufficientQuestions", { count: available });
   }
 
-  if (message === "INVALID_QUESTION_COUNT") {
+  if (code === "INVALID_QUESTION_COUNT") {
     return t("test.errorInvalidCount");
   }
 
-  if (message === "SESSION_NOT_FOUND") {
+  if (code === "SESSION_NOT_FOUND") {
     return t("test.errorSessionNotFound");
   }
 
-  if (message === "SESSION_ALREADY_COMPLETED") {
+  if (code === "SESSION_ALREADY_COMPLETED") {
     return t("test.errorSessionCompleted");
   }
 
-  if (message === "EMPTY_TEST") {
+  if (code === "EMPTY_TEST") {
     return t("test.errorEmptyTest");
   }
 
-  return message;
+  if (
+    code === "SERVER_ERROR" ||
+    code === "DEFAULT_USER_SETUP_FAILED" ||
+    code === "SESSION_CREATE_FAILED" ||
+    code === "QUESTIONS_FETCH_FAILED" ||
+    code === "SUBMIT_FAILED"
+  ) {
+    return t("test.errorServer");
+  }
+
+  if (code.includes("Server Components render")) {
+    return t("test.errorServer");
+  }
+
+  return code;
+}
+
+export function mapTestError(error: unknown, t: TranslateFn): string {
+  if (typeof error === "string") {
+    return mapTestErrorCode(error, t);
+  }
+
+  if (error instanceof Error) {
+    return mapTestErrorCode(error.message, t);
+  }
+
+  return t("common.error");
 }

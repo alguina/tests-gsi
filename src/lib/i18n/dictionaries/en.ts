@@ -195,6 +195,8 @@ export const en: Dictionary = {
   "test.errorSessionNotFound": "Test session not found.",
   "test.errorSessionCompleted": "This test session was already submitted.",
   "test.errorEmptyTest": "Cannot submit an empty test.",
+  "test.errorServer":
+    "Could not start the test. Check that Supabase is configured and the database schema is up to date.",
   "test.questionProgress": "Question {current} of {total}",
   "test.answeredCount": "{count} answered",
   "test.leaveBlank": "Leave blank",
