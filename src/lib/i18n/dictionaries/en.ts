@@ -195,8 +195,18 @@ export const en: Dictionary = {
   "test.errorSessionNotFound": "Test session not found.",
   "test.errorSessionCompleted": "This test session was already submitted.",
   "test.errorEmptyTest": "Cannot submit an empty test.",
+  "test.errorMissingConfig":
+    "Supabase environment variables are missing on the server. Configure them in Vercel.",
+  "test.errorDefaultUser":
+    "Could not prepare the default user. Run supabase/fix-test-start.sql.",
+  "test.errorSessionCreate":
+    "Could not create the test session. Run supabase/fix-test-start.sql in Supabase.",
+  "test.errorQuestionsFetch":
+    "Could not load questions. Import tests and run supabase/fix-test-start.sql.",
+  "test.errorAnswersFetch":
+    "Could not load answers for the selected questions.",
   "test.errorServer":
-    "Could not start the test. Check that Supabase is configured and the database schema is up to date.",
+    "The test could not be completed because of a server error.",
   "test.questionProgress": "Question {current} of {total}",
   "test.answeredCount": "{count} answered",
   "test.leaveBlank": "Leave blank",

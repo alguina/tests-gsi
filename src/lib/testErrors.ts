@@ -28,11 +28,28 @@ export function mapTestErrorCode(code: string, t: TranslateFn): string {
     return t("test.errorEmptyTest");
   }
 
+  if (code === "MISSING_SUPABASE_CONFIG") {
+    return t("test.errorMissingConfig");
+  }
+
+  if (code === "DEFAULT_USER_SETUP_FAILED") {
+    return t("test.errorDefaultUser");
+  }
+
+  if (code === "SESSION_CREATE_FAILED") {
+    return t("test.errorSessionCreate");
+  }
+
+  if (code === "QUESTIONS_FETCH_FAILED") {
+    return t("test.errorQuestionsFetch");
+  }
+
+  if (code === "ANSWERS_FETCH_FAILED") {
+    return t("test.errorAnswersFetch");
+  }
+
   if (
     code === "SERVER_ERROR" ||
-    code === "DEFAULT_USER_SETUP_FAILED" ||
-    code === "SESSION_CREATE_FAILED" ||
-    code === "QUESTIONS_FETCH_FAILED" ||
     code === "SUBMIT_FAILED"
   ) {
     return t("test.errorServer");

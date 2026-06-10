@@ -89,10 +89,9 @@ type DbSessionRow = {
 export async function countEligibleQuestions(): Promise<number> {
   const supabase = createServerSupabaseClient();
 
-  const { data, error } = await supabase
-    .from("questions")
-    .select("id, answers!inner(is_correct)")
-    .eq("answers.is_correct", true);
+  const { data, error } = await supabase.rpc("get_random_questions", {
+    question_limit: 1000,
+  });
 
   if (error) {
     throw new Error(`Failed to count questions: ${error.message}`);
@@ -159,22 +158,23 @@ export async function fetchRandomTestQuestions(
 
   const supabase = createServerSupabaseClient();
 
-  const { data: eligibleQuestions, error: questionsError } = await supabase
-    .from("questions")
-    .select("id, text, block, topic, year, exam, answers!inner(is_correct)")
-    .eq("answers.is_correct", true);
+  const { data: eligibleQuestions, error: questionsError } = await supabase.rpc(
+    "get_random_questions",
+    { question_limit: limit },
+  );
 
   if (questionsError) {
     throw new Error(`Failed to fetch questions: ${questionsError.message}`);
   }
 
-  const questionRows = pickRandomItems(
-    (eligibleQuestions ?? []) as DbQuestionRow[],
-    limit,
-  );
+  const questionRows = (eligibleQuestions ?? []) as DbQuestionRow[];
 
   if (!questionRows.length) {
     throw new Error("NO_QUESTIONS_AVAILABLE");
+  }
+
+  if (questionRows.length < limit) {
+    throw new Error(`INSUFFICIENT_QUESTIONS:${questionRows.length}`);
   }
 
   const questionIds = questionRows.map((question) => question.id);
@@ -504,15 +504,4 @@ function formatQuestionMetadata(question: TestQuestion): string {
     .filter(Boolean)
     .map(String)
     .join(" / ");
-}
-
-function pickRandomItems<T>(items: T[], limit: number): T[] {
-  const copy = [...items];
-
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
-  }
-
-  return copy.slice(0, limit);
 }

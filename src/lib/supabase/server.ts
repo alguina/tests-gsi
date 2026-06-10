@@ -9,9 +9,7 @@ export function createServerSupabaseClient(): SupabaseClient {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anonKey) {
-    throw new Error(
-      "Missing Supabase env vars. Copy .env.local.example to .env.local and add your project credentials.",
-    );
+    throw new Error("MISSING_SUPABASE_CONFIG");
   }
 
   return createClient(normalizeSupabaseUrl(url), anonKey);
