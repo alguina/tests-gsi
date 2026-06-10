@@ -33,12 +33,11 @@ type ButtonAsLink = ButtonBaseProps & {
 export type ButtonProps = ButtonAsButton | ButtonAsLink;
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary:
-    "bg-primary text-white hover:bg-primary-muted disabled:bg-zinc-400",
+  primary: "bg-cta shadow-md shadow-selection-from/20 disabled:shadow-none",
   secondary:
     "border border-border bg-surface text-text-primary hover:bg-surface-muted disabled:opacity-50",
   success:
-    "bg-success text-white hover:bg-emerald-600 disabled:bg-emerald-400",
+    "bg-cta shadow-md shadow-selection-from/20 disabled:shadow-none",
   danger:
     "border border-red-300 text-danger hover:bg-danger-muted disabled:opacity-50",
   ghost: "text-text-secondary hover:bg-surface-muted hover:text-text-primary",

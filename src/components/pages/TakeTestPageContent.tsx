@@ -3,12 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { SelectableOption } from "@/components/ui/SelectableOption";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useI18n } from "@/lib/i18n/useI18n";
 import { TEST_QUESTION_COUNTS } from "@/lib/testSession";
-import { cn } from "@/lib/ui/cn";
 
 const COMING_SOON_MODES = [
   {
@@ -58,19 +58,14 @@ export function TakeTestPageContent() {
 
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {TEST_QUESTION_COUNTS.map((count) => (
-              <button
+              <SelectableOption
                 key={count}
-                type="button"
+                selected={selectedCount === count}
                 onClick={() => setSelectedCount(count)}
-                className={cn(
-                  "rounded-xl border px-3 py-3 text-center text-sm font-semibold transition",
-                  selectedCount === count
-                    ? "border-primary bg-primary text-white"
-                    : "border-border bg-surface-muted text-text-primary hover:border-primary hover:bg-surface",
-                )}
+                className="px-3 py-3"
               >
                 {t("test.questionsCount", { count })}
-              </button>
+              </SelectableOption>
             ))}
           </div>
 

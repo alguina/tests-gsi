@@ -59,11 +59,12 @@ function NavLink({
       className={cn(
         "text-sm font-medium transition",
         isActive
-          ? "bg-primary text-white"
-          : "text-text-secondary hover:bg-surface-muted hover:text-text-primary",
+          ? "text-selection-from underline decoration-selection-from decoration-2 underline-offset-[6px]"
+          : "text-text-secondary hover:text-selection-from",
         className,
       )}
       onClick={onNavigate}
+      aria-current={isActive ? "page" : undefined}
     >
       {label}
     </Link>
@@ -148,7 +149,7 @@ export function MainNav() {
                   item={item}
                   isActive={isNavItemActive(pathname, item)}
                   label={t(item.labelKey)}
-                  className="rounded-xl px-3 py-3"
+                  className="px-3 py-3"
                   onNavigate={() => setIsMenuOpen(false)}
                 />
               ))}
@@ -156,15 +157,15 @@ export function MainNav() {
           </div>
         </div>
 
-        <div className="hidden items-center gap-3 lg:flex">
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="hidden items-center gap-6 lg:flex">
+          <div className="flex flex-wrap items-center gap-5">
             {MAIN_NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.href}
                 item={item}
                 isActive={isNavItemActive(pathname, item)}
                 label={t(item.labelKey)}
-                className="whitespace-nowrap rounded-full px-3 py-2"
+                className="whitespace-nowrap py-1"
               />
             ))}
           </div>

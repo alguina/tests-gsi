@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { startRandomTest, submitTest } from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { TestResultsContent } from "@/components/pages/TestResultsContent";
+import { SelectableOption } from "@/components/ui/SelectableOption";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -229,20 +230,15 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
 
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {TEST_QUESTION_COUNTS.map((count) => (
-              <button
+              <SelectableOption
                 key={count}
-                type="button"
+                selected={selectedCount === count}
                 onClick={() => setSelectedCount(count)}
                 disabled={isLoading}
-                className={cn(
-                  "rounded-xl border px-4 py-4 text-center text-base font-semibold transition disabled:cursor-not-allowed disabled:opacity-60",
-                  selectedCount === count
-                    ? "border-primary bg-primary text-white"
-                    : "border-border bg-surface-muted text-text-primary hover:border-primary hover:bg-surface",
-                )}
+                className="px-4 py-4 text-base"
               >
                 {t("test.questionsCount", { count })}
-              </button>
+              </SelectableOption>
             ))}
           </div>
 
@@ -318,19 +314,14 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
 
                 return (
                   <li key={answer.letter}>
-                    <button
-                      type="button"
+                    <SelectableOption
+                      selected={isSelected}
                       onClick={() => handleSelectAnswer(answer.letter)}
-                      className={cn(
-                        "w-full rounded-xl border p-4 text-left text-sm leading-6 transition",
-                        isSelected
-                          ? "border-primary bg-primary text-white"
-                          : "border-border bg-surface-muted text-text-primary hover:border-zinc-400 hover:bg-surface",
-                      )}
+                      className="p-4 text-left text-sm leading-6 font-normal"
                     >
                       <span className="font-semibold">{answer.letter}.</span>{" "}
                       {answer.text}
-                    </button>
+                    </SelectableOption>
                   </li>
                 );
               })}
