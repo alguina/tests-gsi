@@ -1,0 +1,205 @@
+import type { Dictionary } from "@/lib/i18n/types";
+
+export const es: Dictionary = {
+  "app.title": "GSI A2 Study",
+
+  "nav.home": "Inicio",
+  "nav.takeTest": "Hacer test",
+  "nav.dashboard": "Panel",
+  "nav.reviewTopics": "Repasar temas",
+  "nav.history": "Historial",
+  "nav.import": "Importar",
+
+  "language.label": "Idioma",
+
+  "home.eyebrow": "Panel de estudio",
+  "home.title": "Entrena para GSI A2 con tu banco de preguntas importado",
+  "home.subtitle":
+    "Inicia una sesión de práctica, repasa áreas débiles y sigue tu progreso con tu banco de preguntas guardado en Supabase.",
+  "home.startTraining": "Empezar entrenamiento",
+  "home.takeRandomTest": "Test aleatorio",
+  "home.totalQuestions": "Preguntas importadas",
+  "home.totalTests": "Tests importados",
+  "home.questionsAnswered": "Preguntas respondidas",
+  "home.averageNetScore": "Nota media neta",
+  "home.weakTopics": "Temas débiles",
+  "home.pendingReview": "Pendientes de repaso",
+  "home.recommendedToday": "Recomendado hoy",
+  "home.reviewRecentMistakes": "Repasar errores recientes",
+  "home.startWithRandomTest": "Empezar con un test aleatorio",
+  "home.recommendedWithAttempts":
+    "Usa tu cola de repaso para reforzar las preguntas que fallaste.",
+  "home.recommendedWithoutAttempts":
+    "Aún no hay intentos. Un test aleatorio corto creará tu base y desbloqueará mejores recomendaciones.",
+  "home.suggestedTopicsWeak": "Temas sugeridos: temas débiles de tus intentos",
+  "home.suggestedTopicsMixed": "Temas sugeridos: mixto",
+  "home.latestSession": "Última sesión",
+  "home.netScore": "Nota neta {score}",
+  "home.sessionSummary":
+    "{correct} aciertos, {wrong} fallos, {blank} en blanco de {total} preguntas.",
+  "home.viewHistory": "Ver historial",
+  "home.noSessionsYet": "Aún no hay sesiones",
+  "home.noSessionsDescription":
+    "Empieza a entrenar para guardar tu primera sesión completada.",
+
+  "dashboard.eyebrow": "Progreso",
+  "dashboard.title": "Panel",
+  "dashboard.description":
+    "Resumen simple del contenido importado y los intentos guardados. Los gráficos se añadirán cuando haya más historial de sesiones.",
+  "dashboard.performanceOverTime": "Rendimiento en el tiempo",
+  "dashboard.accuracyByTopic": "Precisión por tema",
+  "dashboard.netScoreTrend": "Tendencia de nota neta",
+  "dashboard.mostFailedTopics": "Temas con más fallos",
+  "dashboard.mostImprovedTopics": "Temas más mejorados",
+  "dashboard.placeholderDescription":
+    "Estado vacío por ahora. Esta sección usará intentos y estadísticas por tema cuando haya más datos de entrenamiento.",
+  "dashboard.noAttemptHistory": "Aún no hay historial de intentos",
+  "dashboard.noAttemptHistoryDescription":
+    "Haz un test aleatorio para generar datos de progreso.",
+
+  "import.eyebrow": "Herramientas de administración",
+  "import.title": "Importar contenido",
+  "import.subtitle":
+    "Mantén esta zona para administración de contenido: importación por URL, pegado manual, descubrimiento, simulaciones y lotes de importación masiva.",
+  "import.singleTestImport": "Importación de test individual",
+  "import.singleTestImportDescription":
+    "Pega una URL visible de test o una URL directa del asset JS desde DevTools Network.",
+  "import.urlLabel": "URL de test o asset",
+  "import.urlPlaceholder": "https://example.com/tests/#/test/...",
+  "import.importFromUrl": "Importar desde URL",
+  "import.importing": "Importando...",
+  "import.loadedAsset": "Asset cargado:",
+  "import.sourceUrl": "URL de origen:",
+  "import.discoverTests": "Descubrir e importar en lote",
+  "import.discoverTestsDescription":
+    "Descubre el índice de tests, ejecuta simulaciones e importa lotes con persistencia inmediata en Supabase.",
+  "import.openBulkImport": "Abrir importación masiva",
+  "import.manualPaste": "Importación manual por pegado",
+  "import.rawJsLabel": "JavaScript de test en bruto",
+  "import.parseTest": "Analizar test",
+  "import.resetSample": "Restablecer ejemplo",
+  "import.preview": "Vista previa",
+  "import.previewTitle": "Título",
+  "import.untitledTest": "Test sin título",
+  "import.previewQuestions": "Preguntas",
+  "import.previewAnswers": "Respuestas",
+  "import.previewWithCorrect": "Con respuesta correcta",
+  "import.saveToDatabase": "Guardar en base de datos",
+  "import.saving": "Guardando...",
+  "import.importResult": "Resultado de importación",
+  "import.sourceStatus": "Origen {status} ({id})",
+  "import.questionsInserted": "Preguntas insertadas:",
+  "import.questionsUpdated": "Preguntas actualizadas:",
+  "import.questionsSkipped": "Preguntas omitidas:",
+  "import.answersInserted": "Respuestas insertadas:",
+  "import.answersUpdated": "Respuestas actualizadas:",
+  "import.importNextBatch": "Importar siguiente lote",
+  "import.dryRun": "Simulación",
+  "import.databaseCounts": "Conteos de base de datos",
+  "import.parseFailed":
+    "Error al analizar. Revisa el JavaScript pegado e inténtalo de nuevo.",
+  "import.urlImportFailed": "Error al importar desde la URL.",
+  "import.saveFailed": "Error al guardar el test en Supabase.",
+
+  "takeTest.eyebrow": "Entrenamiento",
+  "takeTest.title": "Hacer test",
+  "takeTest.description":
+    "Elige un modo de entrenamiento. El motor de test aleatorio ya está disponible; los otros modos se prepararán para progreso por temas más adelante.",
+  "takeTest.randomTest": "Test aleatorio",
+  "takeTest.randomTestDescription":
+    "Inicia un test de práctica mixto desde todo el banco de preguntas.",
+  "takeTest.weakTopics": "Entrenamiento de temas débiles",
+  "takeTest.weakTopicsDescription":
+    "Céntrate en temas con menor precisión cuando haya suficientes intentos.",
+  "takeTest.failedQuestions": "Preguntas falladas",
+  "takeTest.failedQuestionsDescription":
+    "Repasa preguntas que fallaste anteriormente.",
+  "takeTest.examSimulation": "Simulación de examen oficial",
+  "takeTest.examSimulationDescription":
+    "Usa ajustes y puntuación similares al examen.",
+  "takeTest.startTest": "Iniciar test",
+  "takeTest.comingSoon":
+    "Disponible cuando haya más datos de intentos.",
+
+  "history.eyebrow": "Intentos",
+  "history.title": "Historial",
+  "history.description":
+    "Las sesiones de test completadas aparecerán aquí.",
+  "history.questionSession": "Sesión de {count} preguntas",
+  "history.inProgress": "En progreso o sin hora de finalización",
+  "history.netScore": "Nota neta {score}",
+  "history.sessionSummary":
+    "{correct} aciertos, {wrong} fallos, {blank} en blanco.",
+  "history.noSessionsYet": "Aún no hay sesiones",
+  "history.noSessionsDescription":
+    "Completa tu primer test aleatorio para empezar a construir el historial.",
+
+  "reviewTopics.eyebrow": "Repaso",
+  "reviewTopics.title": "Repasar temas",
+  "reviewTopics.description":
+    "El progreso por tema será específico del usuario cuando los intentos se vinculen a estadísticas por tema. Por ahora se muestran las preguntas disponibles por tema.",
+  "reviewTopics.topic": "Tema",
+  "reviewTopics.totalQuestions": "Total de preguntas",
+  "reviewTopics.answered": "Respondidas",
+  "reviewTopics.accuracy": "Precisión",
+  "reviewTopics.priority": "Prioridad",
+  "reviewTopics.noAttempts": "Sin intentos",
+  "reviewTopics.noTopicsFound": "No se encontraron temas",
+  "reviewTopics.noTopicsDescription":
+    "Importa tests para poblar los temas de repaso.",
+  "reviewTopics.goToImport": "Ir a Importar",
+
+  "saved.eyebrow": "Verificación Supabase",
+  "saved.title": "Conteo de preguntas guardadas",
+  "saved.description":
+    "Comprobación rápida de que los tests importados se guardaron en Supabase.",
+  "saved.loadError": "No se pudieron cargar las estadísticas de la base de datos.",
+  "saved.sources": "Fuentes",
+  "saved.questions": "Preguntas",
+  "saved.answers": "Respuestas",
+  "saved.backToImport": "Volver a Importar",
+
+  "test.eyebrow": "Modo estudio",
+  "test.title": "Iniciar test",
+  "test.description":
+    "Responde preguntas aleatorias de tu banco guardado en Supabase, una a una.",
+  "test.backToTakeTest": "Volver a Hacer test",
+  "test.chooseSize": "Elige el tamaño del test",
+  "test.chooseSizeDescription":
+    "Las preguntas se eligen al azar entre los elementos guardados con respuesta correcta conocida.",
+  "test.questionsCount": "{count} preguntas",
+  "test.loadingQuestions": "Cargando preguntas...",
+  "test.loadError": "No se pudieron cargar las preguntas desde Supabase.",
+  "test.questionProgress": "Pregunta {current} de {total}",
+  "test.answeredCount": "{count} respondidas",
+  "test.leaveBlank": "Dejar en blanco",
+  "test.previous": "Anterior",
+  "test.next": "Siguiente",
+  "test.submitting": "Enviando...",
+  "test.submitTest": "Enviar test",
+  "test.submitError": "Error al enviar el test.",
+  "test.results": "Resultados",
+  "test.sessionSaved": "Sesión guardada como {sessionId}",
+  "test.statCorrect": "Aciertos",
+  "test.statWrong": "Fallos",
+  "test.statBlank": "En blanco",
+  "test.statNetScore": "Nota neta",
+  "test.correction": "Corrección",
+  "test.yourAnswer": "Tu respuesta:",
+  "test.correctAnswer": "Respuesta correcta:",
+  "test.blankValue": "En blanco",
+  "test.unknown": "Desconocida",
+  "test.leftBlank": "Dejada en blanco",
+  "test.resultCorrect": "Correcta",
+  "test.resultWrong": "Incorrecta",
+  "test.startAnother": "Iniciar otro test",
+
+  "common.loading": "Cargando...",
+  "common.error": "Error",
+  "common.empty": "Vacío",
+  "common.save": "Guardar",
+  "common.cancel": "Cancelar",
+  "common.retry": "Reintentar",
+  "common.correct": "Correcta",
+  "common.dash": "—",
+};

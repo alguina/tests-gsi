@@ -1,0 +1,205 @@
+import type { Dictionary } from "@/lib/i18n/types";
+
+export const en: Dictionary = {
+  "app.title": "GSI A2 Study",
+
+  "nav.home": "Home",
+  "nav.takeTest": "Take test",
+  "nav.dashboard": "Dashboard",
+  "nav.reviewTopics": "Review topics",
+  "nav.history": "History",
+  "nav.import": "Import",
+
+  "language.label": "Language",
+
+  "home.eyebrow": "Study dashboard",
+  "home.title": "Train for GSI A2 with your imported question bank",
+  "home.subtitle":
+    "Start a practice session, review weak areas, and track progress from your question bank stored in Supabase.",
+  "home.startTraining": "Start training",
+  "home.takeRandomTest": "Take random test",
+  "home.totalQuestions": "Questions imported",
+  "home.totalTests": "Tests imported",
+  "home.questionsAnswered": "Questions answered",
+  "home.averageNetScore": "Average net score",
+  "home.weakTopics": "Weak topics",
+  "home.pendingReview": "Pending review",
+  "home.recommendedToday": "Recommended today",
+  "home.recommendedWithAttempts":
+    "Use your pending review queue to reinforce questions you missed.",
+  "home.recommendedWithoutAttempts":
+    "No attempts yet. A short random test will create your baseline and unlock better recommendations.",
+  "home.reviewRecentMistakes": "Review recent mistakes",
+  "home.startWithRandomTest": "Start with a random test",
+  "home.suggestedTopicsWeak": "Suggested topics: weak topics from attempts",
+  "home.suggestedTopicsMixed": "Suggested topics: mixed",
+  "home.latestSession": "Latest session",
+  "home.netScore": "Net score {score}",
+  "home.sessionSummary":
+    "{correct} correct, {wrong} wrong, {blank} blank out of {total} questions.",
+  "home.viewHistory": "View history",
+  "home.noSessionsYet": "No sessions yet",
+  "home.noSessionsDescription":
+    "Start training to save your first completed test session.",
+
+  "dashboard.eyebrow": "Progress",
+  "dashboard.title": "Dashboard",
+  "dashboard.description":
+    "A simple overview of imported content and saved attempts. Charts can be added once there is enough session history.",
+  "dashboard.performanceOverTime": "Performance over time",
+  "dashboard.accuracyByTopic": "Accuracy by topic",
+  "dashboard.netScoreTrend": "Net score trend",
+  "dashboard.mostFailedTopics": "Most failed topics",
+  "dashboard.mostImprovedTopics": "Most improved topics",
+  "dashboard.placeholderDescription":
+    "Empty state for now. This section will use user-specific attempts and topic stats when more training data exists.",
+  "dashboard.noAttemptHistory": "No attempt history yet",
+  "dashboard.noAttemptHistoryDescription":
+    "Start a random test to generate progress data.",
+
+  "import.eyebrow": "Admin tooling",
+  "import.title": "Import content",
+  "import.subtitle":
+    "Keep this area for content administration: single URL imports, manual paste imports, discovery, dry runs, and bulk import batches.",
+  "import.singleTestImport": "Single test import",
+  "import.singleTestImportDescription":
+    "Paste a visible test URL or a direct JS asset URL from DevTools Network.",
+  "import.urlLabel": "Test or asset URL",
+  "import.urlPlaceholder": "https://example.com/tests/#/test/...",
+  "import.importFromUrl": "Import from URL",
+  "import.importing": "Importing...",
+  "import.loadedAsset": "Loaded asset:",
+  "import.sourceUrl": "Source URL:",
+  "import.discoverTests": "Discover and bulk import",
+  "import.discoverTestsDescription":
+    "Discover the test index, run dry runs, and import batches with immediate Supabase persistence.",
+  "import.openBulkImport": "Open bulk import",
+  "import.manualPaste": "Manual paste import",
+  "import.rawJsLabel": "Raw test JavaScript",
+  "import.parseTest": "Parse test",
+  "import.resetSample": "Reset sample",
+  "import.preview": "Preview",
+  "import.previewTitle": "Title",
+  "import.untitledTest": "Untitled test",
+  "import.previewQuestions": "Questions",
+  "import.previewAnswers": "Answers",
+  "import.previewWithCorrect": "With correct",
+  "import.saveToDatabase": "Save to database",
+  "import.saving": "Saving...",
+  "import.importResult": "Import result",
+  "import.sourceStatus": "Source {status} ({id})",
+  "import.questionsInserted": "Questions inserted:",
+  "import.questionsUpdated": "Questions updated:",
+  "import.questionsSkipped": "Questions skipped:",
+  "import.answersInserted": "Answers inserted:",
+  "import.answersUpdated": "Answers updated:",
+  "import.importNextBatch": "Import next batch",
+  "import.dryRun": "Dry run",
+  "import.databaseCounts": "Database counts",
+  "import.parseFailed":
+    "Parsing failed. Check the pasted JavaScript and try again.",
+  "import.urlImportFailed": "Failed to import from URL.",
+  "import.saveFailed": "Failed to save test to Supabase.",
+
+  "takeTest.eyebrow": "Training",
+  "takeTest.title": "Take test",
+  "takeTest.description":
+    "Choose a training mode. The existing random test engine is available now; the other modes are prepared for topic-aware progress later.",
+  "takeTest.randomTest": "Random test",
+  "takeTest.randomTestDescription":
+    "Start a mixed practice test from the full question bank.",
+  "takeTest.weakTopics": "Weak topics training",
+  "takeTest.weakTopicsDescription":
+    "Focus on topics with lower accuracy once enough attempts exist.",
+  "takeTest.failedQuestions": "Failed questions",
+  "takeTest.failedQuestionsDescription":
+    "Review questions you previously missed.",
+  "takeTest.examSimulation": "Official exam simulation",
+  "takeTest.examSimulationDescription":
+    "Use exam-like settings and scoring.",
+  "takeTest.startTest": "Start test",
+  "takeTest.comingSoon":
+    "Coming after more attempt data is available.",
+
+  "history.eyebrow": "Attempts",
+  "history.title": "History",
+  "history.description":
+    "Past completed test sessions will appear here.",
+  "history.questionSession": "{count} question session",
+  "history.inProgress": "In progress or no finish time",
+  "history.netScore": "Net {score}",
+  "history.sessionSummary":
+    "{correct} correct, {wrong} wrong, {blank} blank.",
+  "history.noSessionsYet": "No sessions yet",
+  "history.noSessionsDescription":
+    "Complete your first random test to start building history.",
+
+  "reviewTopics.eyebrow": "Review",
+  "reviewTopics.title": "Review topics",
+  "reviewTopics.description":
+    "Topic-level progress will become user-specific once attempts are linked to topic stats. For now this shows available questions by topic.",
+  "reviewTopics.topic": "Topic",
+  "reviewTopics.totalQuestions": "Total questions",
+  "reviewTopics.answered": "Answered",
+  "reviewTopics.accuracy": "Accuracy",
+  "reviewTopics.priority": "Priority",
+  "reviewTopics.noAttempts": "No attempts",
+  "reviewTopics.noTopicsFound": "No topics found",
+  "reviewTopics.noTopicsDescription":
+    "Import tests to populate review topics.",
+  "reviewTopics.goToImport": "Go to Import",
+
+  "saved.eyebrow": "Supabase verification",
+  "saved.title": "Saved questions count",
+  "saved.description":
+    "Quick check that imported tests were stored in Supabase.",
+  "saved.loadError": "Could not load database stats.",
+  "saved.sources": "Sources",
+  "saved.questions": "Questions",
+  "saved.answers": "Answers",
+  "saved.backToImport": "Back to Import",
+
+  "test.eyebrow": "Study mode",
+  "test.title": "Start test",
+  "test.description":
+    "Answer random questions from your saved Supabase bank, one at a time.",
+  "test.backToTakeTest": "Back to Take test",
+  "test.chooseSize": "Choose test size",
+  "test.chooseSizeDescription":
+    "Questions are picked randomly from saved items with a known correct answer.",
+  "test.questionsCount": "{count} questions",
+  "test.loadingQuestions": "Loading questions...",
+  "test.loadError": "Could not load questions from Supabase.",
+  "test.questionProgress": "Question {current} of {total}",
+  "test.answeredCount": "{count} answered",
+  "test.leaveBlank": "Leave blank",
+  "test.previous": "Previous",
+  "test.next": "Next",
+  "test.submitting": "Submitting...",
+  "test.submitTest": "Submit test",
+  "test.submitError": "Failed to submit the test.",
+  "test.results": "Results",
+  "test.sessionSaved": "Session saved as {sessionId}",
+  "test.statCorrect": "Correct",
+  "test.statWrong": "Wrong",
+  "test.statBlank": "Blank",
+  "test.statNetScore": "Net score",
+  "test.correction": "Correction",
+  "test.yourAnswer": "Your answer:",
+  "test.correctAnswer": "Correct answer:",
+  "test.blankValue": "Blank",
+  "test.unknown": "Unknown",
+  "test.leftBlank": "Left blank",
+  "test.resultCorrect": "Correct",
+  "test.resultWrong": "Wrong",
+  "test.startAnother": "Start another test",
+
+  "common.loading": "Loading...",
+  "common.error": "Error",
+  "common.empty": "Empty",
+  "common.save": "Save",
+  "common.cancel": "Cancel",
+  "common.retry": "Retry",
+  "common.correct": "Correct",
+  "common.dash": "—",
+};
