@@ -48,6 +48,19 @@ insert into users (id, name)
 values ('8f3c2e1a-9b4d-4f6e-a7c8-9d0e1f2a3b4c', 'Alex')
 on conflict (id) do nothing;
 
+create or replace function public.ensure_default_user()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.users (id, name)
+  values ('8f3c2e1a-9b4d-4f6e-a7c8-9d0e1f2a3b4c', 'Alex')
+  on conflict (id) do nothing;
+end;
+$$;
+
 create table if not exists test_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references users(id),
@@ -138,3 +151,4 @@ grant select, insert, update, delete on public.users to anon, authenticated;
 grant select, insert, update, delete on public.test_sessions to anon, authenticated;
 grant select, insert, update, delete on public.attempts to anon, authenticated;
 grant execute on function public.get_random_questions(integer) to anon, authenticated;
+grant execute on function public.ensure_default_user() to anon, authenticated;

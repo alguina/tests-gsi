@@ -8,15 +8,32 @@ export const DEFAULT_USER_NAME = "Alex";
 export async function ensureDefaultUser(): Promise<void> {
   const supabase = createServerSupabaseClient();
 
-  const { error } = await supabase.from("users").upsert(
-    {
-      id: DEFAULT_USER_ID,
-      name: DEFAULT_USER_NAME,
-    },
-    { onConflict: "id" },
-  );
+  const { error: rpcError } = await supabase.rpc("ensure_default_user");
 
-  if (error) {
-    throw new Error(`Failed to ensure default user: ${error.message}`);
+  if (!rpcError) {
+    return;
+  }
+
+  const { data: existing, error: selectError } = await supabase
+    .from("users")
+    .select("id")
+    .eq("id", DEFAULT_USER_ID)
+    .maybeSingle();
+
+  if (selectError) {
+    throw new Error(`Failed to ensure default user: ${selectError.message}`);
+  }
+
+  if (existing) {
+    return;
+  }
+
+  const { error: insertError } = await supabase.from("users").insert({
+    id: DEFAULT_USER_ID,
+    name: DEFAULT_USER_NAME,
+  });
+
+  if (insertError) {
+    throw new Error(`Failed to ensure default user: ${insertError.message}`);
   }
 }
