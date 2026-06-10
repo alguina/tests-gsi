@@ -43,8 +43,9 @@ export function ChooseProfileModal({
       }
 
       onProfileSelected(result.data);
-    } catch {
-      setError(`Error: PROFILE_CREATE_FAILED`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Error: ${msg}`);
     } finally {
       setIsLoading(false);
     }

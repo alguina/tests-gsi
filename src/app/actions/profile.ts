@@ -22,63 +22,105 @@ async function setProfileCookie(userId: string): Promise<void> {
 export async function findOrCreateProfile(
   rawName: string,
 ): Promise<ActionResult<LocalProfile>> {
-  const trimmed = rawName.trim();
+  try {
+    const trimmed = rawName.trim();
 
-  if (!trimmed) {
-    return actionFail("PROFILE_NAME_REQUIRED");
+    if (!trimmed) {
+      return actionFail("PROFILE_NAME_REQUIRED");
+    }
+
+    const normalizedName = normalizeName(trimmed);
+    const supabase = createServerSupabaseClient();
+
+    // Use the find_or_create_user RPC which works with any schema state
+    // and generates the UUID server-side via SECURITY DEFINER.
+    const { data: rpcResult, error: rpcError } = await supabase.rpc(
+      "find_or_create_user",
+      { p_name: trimmed, p_normalized_name: normalizedName },
+    );
+
+    if (rpcError) {
+      // RPC doesn't exist yet (migration not run) — fall back to direct queries
+      return await findOrCreateDirect(supabase, trimmed, normalizedName);
+    }
+
+    const user = rpcResult as { id: string; name: string } | null;
+
+    if (!user?.id) {
+      return actionFail("PROFILE_RPC_EMPTY");
+    }
+
+    const profile: LocalProfile = { id: user.id, name: user.name };
+    await setProfileCookie(profile.id);
+    return actionOk(profile);
+  } catch (err) {
+    const code = err instanceof Error ? err.message : "PROFILE_UNEXPECTED_ERROR";
+    return actionFail(code);
   }
+}
 
-  const normalizedName = normalizeName(trimmed);
-  const supabase = createServerSupabaseClient();
-
-  // Try to find an existing user with the same normalized name
+/** Fallback when the find_or_create_user RPC has not been deployed yet. */
+async function findOrCreateDirect(
+  supabase: ReturnType<typeof import("@/lib/supabase/server").createServerSupabaseClient>,
+  name: string,
+  normalizedName: string,
+): Promise<ActionResult<LocalProfile>> {
+  // Try to find by normalized_name (requires add-profile-fields migration)
   const { data: existing, error: findError } = await supabase
     .from("users")
     .select("id, name")
     .eq("normalized_name", normalizedName)
     .maybeSingle();
 
-  if (findError) {
-    return actionFail("PROFILE_FIND_FAILED");
-  }
-
-  if (existing) {
-    const profile: LocalProfile = { id: existing.id, name: existing.name };
-
+  if (!findError && existing) {
     await supabase
       .from("users")
       .update({ last_seen_at: new Date().toISOString() })
       .eq("id", existing.id);
 
+    const profile: LocalProfile = { id: existing.id, name: existing.name };
     await setProfileCookie(profile.id);
-
     return actionOk(profile);
   }
 
-  // Create a new user — specify id explicitly so the action works even when
-  // the column was created without a default (pre-migration schema).
+  // Create — always supply an explicit id so the action works on schemas
+  // that were created before gen_random_uuid() was set as the column default.
+  const insertPayload: Record<string, string> = {
+    id: crypto.randomUUID(),
+    name,
+  };
+
+  // Only include normalized_name if the column likely exists (find didn't
+  // error due to missing column, just returned no rows).
+  if (!findError) {
+    insertPayload.normalized_name = normalizedName;
+  }
+
   const { data: created, error: createError } = await supabase
     .from("users")
-    .insert({ id: crypto.randomUUID(), name: trimmed, normalized_name: normalizedName })
+    .insert(insertPayload)
     .select("id, name")
     .single();
 
   if (createError || !created) {
-    return actionFail("PROFILE_CREATE_FAILED");
+    return actionFail(
+      `PROFILE_INSERT_FAILED:${createError?.message ?? "no data"}`,
+    );
   }
 
   const profile: LocalProfile = { id: created.id, name: created.name };
-
   await setProfileCookie(profile.id);
-
   return actionOk(profile);
 }
 
 export async function updateProfileLastSeen(userId: string): Promise<void> {
-  const supabase = createServerSupabaseClient();
-
-  await supabase
-    .from("users")
-    .update({ last_seen_at: new Date().toISOString() })
-    .eq("id", userId);
+  try {
+    const supabase = createServerSupabaseClient();
+    await supabase
+      .from("users")
+      .update({ last_seen_at: new Date().toISOString() })
+      .eq("id", userId);
+  } catch {
+    // Non-critical — ignore
+  }
 }
