@@ -55,10 +55,11 @@ export async function findOrCreateProfile(
     return actionOk(profile);
   }
 
-  // Create a new user
+  // Create a new user — specify id explicitly so the action works even when
+  // the column was created without a default (pre-migration schema).
   const { data: created, error: createError } = await supabase
     .from("users")
-    .insert({ name: trimmed, normalized_name: normalizedName })
+    .insert({ id: crypto.randomUUID(), name: trimmed, normalized_name: normalizedName })
     .select("id, name")
     .single();
 

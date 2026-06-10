@@ -6,6 +6,10 @@
 alter table public.users add column if not exists normalized_name text;
 alter table public.users add column if not exists last_seen_at timestamptz;
 
+-- Ensure id has a default so new users can be created without specifying id.
+-- The original schema created id without a default value.
+alter table public.users alter column id set default gen_random_uuid();
+
 -- Backfill normalized_name for existing rows (handles trim + lowercase + collapse spaces)
 update public.users
 set normalized_name = lower(regexp_replace(trim(name), '\s+', ' ', 'g'))
