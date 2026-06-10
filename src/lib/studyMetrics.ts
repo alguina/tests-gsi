@@ -1,4 +1,3 @@
-import { DEFAULT_USER_ID } from "@/lib/currentUser";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type LatestSession = {
@@ -65,7 +64,9 @@ function mapSessionRow(session: {
   };
 }
 
-export async function getHomeStudyStats(): Promise<HomeStudyStats> {
+export async function getHomeStudyStats(
+  userId: string,
+): Promise<HomeStudyStats> {
   const supabase = createServerSupabaseClient();
 
   const [sourcesResult, questionsResult, attemptsResult, sessionsResult] =
@@ -75,13 +76,13 @@ export async function getHomeStudyStats(): Promise<HomeStudyStats> {
       supabase
         .from("attempts")
         .select("id, is_correct, is_blank")
-        .eq("user_id", DEFAULT_USER_ID),
+        .eq("user_id", userId),
       supabase
         .from("test_sessions")
         .select(
           "id, mode, title, completed_at, total_questions, correct_count, wrong_count, blank_count, net_score",
         )
-        .eq("user_id", DEFAULT_USER_ID)
+        .eq("user_id", userId)
         .order("completed_at", { ascending: false, nullsFirst: false })
         .limit(20),
     ]);
@@ -95,7 +96,7 @@ export async function getHomeStudyStats(): Promise<HomeStudyStats> {
   ).length;
 
   return {
-    userId: DEFAULT_USER_ID,
+    userId,
     totalSourcesImported: sourcesResult.count ?? 0,
     totalQuestionsImported: questionsResult.count ?? 0,
     totalQuestionsAnswered: attempts.length,
@@ -112,7 +113,9 @@ export async function getHomeStudyStats(): Promise<HomeStudyStats> {
   };
 }
 
-export async function getDashboardStats(): Promise<DashboardStats> {
+export async function getDashboardStats(
+  userId: string,
+): Promise<DashboardStats> {
   const supabase = createServerSupabaseClient();
 
   const [sessionsResult, attemptsResult, failedTopicsResult] = await Promise.all(
@@ -120,16 +123,16 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       supabase
         .from("test_sessions")
         .select("net_score, completed_at")
-        .eq("user_id", DEFAULT_USER_ID)
+        .eq("user_id", userId)
         .not("completed_at", "is", null),
       supabase
         .from("attempts")
         .select("is_correct, is_blank")
-        .eq("user_id", DEFAULT_USER_ID),
+        .eq("user_id", userId),
       supabase
         .from("attempts")
         .select("question_id, is_correct, is_blank, questions(topic)")
-        .eq("user_id", DEFAULT_USER_ID)
+        .eq("user_id", userId)
         .eq("is_correct", false)
         .eq("is_blank", false),
     ],
@@ -177,19 +180,28 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   };
 }
 
-export async function getTopicSummaries(): Promise<TopicSummary[]> {
+export async function getTopicSummaries(
+  userId: string,
+): Promise<TopicSummary[]> {
   const supabase = createServerSupabaseClient();
-  const { data, error } = await supabase
-    .from("questions")
-    .select("topic")
-    .not("topic", "is", null);
 
-  if (error) {
-    throw new Error(`Failed to load topic summaries: ${error.message}`);
+  const [questionsResult, attemptsResult] = await Promise.all([
+    supabase.from("questions").select("topic").not("topic", "is", null),
+    supabase
+      .from("attempts")
+      .select("question_id, is_correct, is_blank, questions(topic)")
+      .eq("user_id", userId)
+      .eq("is_blank", false),
+  ]);
+
+  if (questionsResult.error) {
+    throw new Error(
+      `Failed to load topic summaries: ${questionsResult.error.message}`,
+    );
   }
 
   const counts = new Map<string, number>();
-  for (const question of data ?? []) {
+  for (const question of questionsResult.data ?? []) {
     const topic = String(question.topic ?? "").trim();
     if (!topic) {
       continue;
@@ -198,27 +210,60 @@ export async function getTopicSummaries(): Promise<TopicSummary[]> {
     counts.set(topic, (counts.get(topic) ?? 0) + 1);
   }
 
+  const answeredByTopic = new Map<string, { correct: number; total: number }>();
+  for (const attempt of attemptsResult.data ?? []) {
+    const topicRaw = (
+      attempt.questions as { topic?: string | null } | null
+    )?.topic;
+    const topic = String(topicRaw ?? "").trim();
+
+    if (!topic) {
+      continue;
+    }
+
+    const current = answeredByTopic.get(topic) ?? { correct: 0, total: 0 };
+    current.total += 1;
+    if (attempt.is_correct) {
+      current.correct += 1;
+    }
+    answeredByTopic.set(topic, current);
+  }
+
   return [...counts.entries()]
-    .map(([topic, totalQuestions]) => ({
-      topic,
-      totalQuestions,
-      answered: 0,
-      accuracy: null,
-      priority: "medium" as const,
-    }))
+    .map(([topic, totalQuestions]) => {
+      const stats = answeredByTopic.get(topic);
+      const answered = stats?.total ?? 0;
+      const accuracy =
+        answered > 0
+          ? Math.round((stats!.correct / answered) * 1000) / 10
+          : null;
+
+      let priority: TopicSummary["priority"] = "low";
+      if (answered === 0) {
+        priority = "medium";
+      } else if (accuracy !== null && accuracy < 50) {
+        priority = "high";
+      } else if (accuracy !== null && accuracy < 75) {
+        priority = "medium";
+      }
+
+      return { topic, totalQuestions, answered, accuracy, priority };
+    })
     .sort((left, right) =>
       left.topic.localeCompare(right.topic, "es", { numeric: true }),
     );
 }
 
-export async function getRecentSessions(): Promise<LatestSession[]> {
+export async function getRecentSessions(
+  userId: string,
+): Promise<LatestSession[]> {
   const supabase = createServerSupabaseClient();
   const { data, error } = await supabase
     .from("test_sessions")
     .select(
       "id, mode, title, completed_at, total_questions, correct_count, wrong_count, blank_count, net_score",
     )
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .not("completed_at", "is", null)
     .order("completed_at", { ascending: false, nullsFirst: false })
     .limit(20);

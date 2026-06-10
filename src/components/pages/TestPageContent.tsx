@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { startRandomTest, submitTest } from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { useProfile } from "@/components/profile/ProfileProvider";
 import { TestResultsContent } from "@/components/pages/TestResultsContent";
 import { SelectableOption } from "@/components/ui/SelectableOption";
 import { Button } from "@/components/ui/Button";
@@ -53,6 +54,7 @@ function responsesToSelections(
 
 export function TestPageContent({ autoStartCount }: TestPageContentProps) {
   const { t } = useI18n();
+  const { profile } = useProfile();
   const autoStartRef = useRef(false);
 
   const [phase, setPhase] = useState<TestPhase>("setup");
@@ -86,6 +88,8 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
     setCurrentIndex((index) => Math.min(index + 1, questions.length - 1));
   }, [questions.length]);
 
+  const profileId = profile?.id;
+
   const handleStart = useCallback(
     async (count: number) => {
       setSelectedCount(count);
@@ -96,7 +100,7 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
       setSessionId(null);
 
       try {
-        const started = await startRandomTest(count);
+        const started = await startRandomTest(count, profileId);
         if (!started.ok) {
           setLoadError(mapTestErrorCode(started.code, t));
           return;
@@ -113,7 +117,7 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
         setIsLoading(false);
       }
     },
-    [t],
+    [t, profileId],
   );
 
   useEffect(() => {
@@ -187,6 +191,7 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
         sessionId,
         questions,
         responsesToSelections(questions, responses),
+        profileId,
       );
 
       if (!submission.ok) {

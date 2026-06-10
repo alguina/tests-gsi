@@ -1,7 +1,4 @@
-import {
-  DEFAULT_USER_ID,
-  ensureDefaultUser,
-} from "@/lib/currentUser";
+import { DEFAULT_USER_ID } from "@/lib/currentUser";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const TEST_QUESTION_COUNTS = [10, 25, 50, 100] as const;
@@ -102,12 +99,11 @@ export async function countEligibleQuestions(): Promise<number> {
 
 export async function startRandomTestSession(
   limit: number,
+  userId: string = DEFAULT_USER_ID,
 ): Promise<StartedTestSession> {
   if (!Number.isInteger(limit) || limit <= 0) {
     throw new Error("INVALID_QUESTION_COUNT");
   }
-
-  await ensureDefaultUser();
 
   const questions = await fetchRandomTestQuestions(limit);
   const supabase = createServerSupabaseClient();
@@ -115,7 +111,7 @@ export async function startRandomTestSession(
   const { data: session, error: sessionError } = await supabase
     .from("test_sessions")
     .insert({
-      user_id: DEFAULT_USER_ID,
+      user_id: userId,
       mode: TEST_MODE_RANDOM,
       title: `Random test (${limit})`,
       total_questions: limit,
@@ -209,6 +205,7 @@ export async function submitTestSession(
   sessionId: string,
   questions: TestQuestion[],
   selections: TestSelection[],
+  userId: string = DEFAULT_USER_ID,
 ): Promise<TestResult> {
   if (!sessionId) {
     throw new Error("MISSING_SESSION_ID");
@@ -217,8 +214,6 @@ export async function submitTestSession(
   if (!questions.length) {
     throw new Error("EMPTY_TEST");
   }
-
-  await ensureDefaultUser();
 
   const selectionMap = new Map(
     selections.map((selection) => [
@@ -274,7 +269,7 @@ export async function submitTestSession(
     .from("test_sessions")
     .select("id, mode, title, user_id, completed_at")
     .eq("id", sessionId)
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (sessionLookupError) {
@@ -302,7 +297,7 @@ export async function submitTestSession(
       completed_at: completedAt,
     })
     .eq("id", sessionId)
-    .eq("user_id", DEFAULT_USER_ID);
+    .eq("user_id", userId);
 
   if (sessionUpdateError) {
     throw new Error(
@@ -319,7 +314,7 @@ export async function submitTestSession(
 
     return {
       session_id: sessionId,
-      user_id: DEFAULT_USER_ID,
+      user_id: userId,
       question_id: result.questionId,
       selected_answer_id: selectedAnswer?.id ?? null,
       selected_letter: result.selectedLetter,
@@ -354,6 +349,7 @@ export async function submitTestSession(
 
 export async function getSessionResult(
   sessionId: string,
+  userId: string = DEFAULT_USER_ID,
 ): Promise<TestResult | null> {
   const supabase = createServerSupabaseClient();
 
@@ -363,7 +359,7 @@ export async function getSessionResult(
       "id, mode, title, total_questions, correct_count, wrong_count, blank_count, net_score, completed_at",
     )
     .eq("id", sessionId)
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (sessionError || !session) {
@@ -385,7 +381,7 @@ export async function getSessionResult(
       "question_id, selected_letter, correct_letter, is_correct, is_blank, questions(id, text, block, topic, year, exam)",
     )
     .eq("session_id", sessionId)
-    .eq("user_id", DEFAULT_USER_ID)
+    .eq("user_id", userId)
     .order("created_at", { ascending: true });
 
   if (attemptsError || !attemptRows?.length) {

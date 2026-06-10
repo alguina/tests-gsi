@@ -1,6 +1,7 @@
 "use client";
 
 import { PageContainer } from "@/components/layout/PageContainer";
+import { useProfile } from "@/components/profile/ProfileProvider";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -15,14 +16,19 @@ type HomePageContentProps = {
 
 export function HomePageContent({ stats }: HomePageContentProps) {
   const { t } = useI18n();
+  const { profile } = useProfile();
+
+  const heroTitle = profile?.name
+    ? t("home.greeting", { name: profile.name })
+    : t("home.eyebrow");
 
   return (
     <PageContainer>
       <PageHeader
         variant="hero"
         eyebrow={t("home.eyebrow")}
-        title={t("home.title")}
-        description={t("home.subtitle")}
+        title={heroTitle}
+        description={t("home.description")}
         actions={
           <Button href="/take-test" fullWidth className="sm:w-auto">
             {t("home.startTraining")}

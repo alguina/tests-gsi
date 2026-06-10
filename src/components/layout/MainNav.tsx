@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
+import { useProfile } from "@/components/profile/ProfileProvider";
 import { cn } from "@/lib/ui/cn";
 import { useI18n } from "@/lib/i18n/useI18n";
 import {
@@ -71,14 +72,58 @@ function NavLink({
   );
 }
 
+function ProfileControl({ className }: { className?: string }) {
+  const { t } = useI18n();
+  const { profile, isHydrated, clearProfile } = useProfile();
+
+  if (!isHydrated || !profile) {
+    return null;
+  }
+
+  return (
+    <div className={cn("flex items-center gap-2", className)}>
+      <span
+        className="max-w-[10rem] truncate text-sm font-medium text-text-primary"
+        title={profile.name}
+      >
+        {profile.name}
+      </span>
+      <button
+        type="button"
+        onClick={clearProfile}
+        className="shrink-0 text-xs text-text-secondary underline decoration-text-secondary/50 underline-offset-2 transition hover:text-selection-from"
+      >
+        {t("profile.changeProfile")}
+      </button>
+    </div>
+  );
+}
+
 export function MainNav() {
   const pathname = usePathname();
   const { t } = useI18n();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  useEffect(() => {
-    setIsMenuOpen(false);
-  }, [pathname]);
+  // Store the pathname at which the menu was opened.
+  // When pathname changes, isMenuOpen derives to false automatically —
+  // no need for a setState-in-effect to close the menu on navigation.
+  const [openedAtPath, setOpenedAtPath] = useState<string | null>(null);
+  const isMenuOpen = openedAtPath === pathname && openedAtPath !== null;
+
+  function openMenu() {
+    setOpenedAtPath(pathname);
+  }
+
+  function closeMenu() {
+    setOpenedAtPath(null);
+  }
+
+  function toggleMenu() {
+    if (isMenuOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  }
 
   useEffect(() => {
     if (!isMenuOpen) {
@@ -87,7 +132,7 @@ export function MainNav() {
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setIsMenuOpen(false);
+        closeMenu();
       }
     }
 
@@ -127,7 +172,7 @@ export function MainNav() {
               aria-expanded={isMenuOpen}
               aria-controls="mobile-main-nav"
               aria-label={isMenuOpen ? t("nav.closeMenu") : t("nav.openMenu")}
-              onClick={() => setIsMenuOpen((open) => !open)}
+              onClick={toggleMenu}
             >
               <MenuIcon open={isMenuOpen} />
             </button>
@@ -150,9 +195,12 @@ export function MainNav() {
                   isActive={isNavItemActive(pathname, item)}
                   label={t(item.labelKey)}
                   className="px-3 py-3"
-                  onNavigate={() => setIsMenuOpen(false)}
+                  onNavigate={closeMenu}
                 />
               ))}
+              <div className="border-t border-border px-3 pt-3 pb-2">
+                <ProfileControl />
+              </div>
             </div>
           </div>
         </div>
@@ -169,6 +217,7 @@ export function MainNav() {
               />
             ))}
           </div>
+          <ProfileControl className="border-l border-border pl-4" />
           <LanguageSelector />
         </div>
       </nav>

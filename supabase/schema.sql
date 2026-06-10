@@ -39,13 +39,17 @@ create index if not exists questions_source_id_idx on questions (source_id);
 create index if not exists answers_question_id_idx on answers (question_id);
 
 create table if not exists users (
-  id uuid primary key,
+  id uuid primary key default gen_random_uuid(),
   name text not null,
+  normalized_name text not null,
+  last_seen_at timestamptz,
   created_at timestamptz not null default now()
 );
 
-insert into users (id, name)
-values ('8f3c2e1a-9b4d-4f6e-a7c8-9d0e1f2a3b4c', 'Alex')
+create unique index if not exists users_normalized_name_idx on users (normalized_name);
+
+insert into users (id, name, normalized_name)
+values ('8f3c2e1a-9b4d-4f6e-a7c8-9d0e1f2a3b4c', 'Alex', 'alex')
 on conflict (id) do nothing;
 
 create or replace function public.ensure_default_user()
@@ -55,9 +59,14 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.users (id, name)
-  values ('8f3c2e1a-9b4d-4f6e-a7c8-9d0e1f2a3b4c', 'Alex')
-  on conflict (id) do nothing;
+  insert into public.users (id, name, normalized_name)
+  values (
+    '8f3c2e1a-9b4d-4f6e-a7c8-9d0e1f2a3b4c',
+    'Alex',
+    'alex'
+  )
+  on conflict (id) do update
+    set normalized_name = coalesce(users.normalized_name, 'alex');
 end;
 $$;
 

@@ -14,10 +14,23 @@ export const en: Dictionary = {
 
   "language.label": "Language",
 
+  "profile.chooseTitle": "Choose your profile",
+  "profile.chooseDescription":
+    "This keeps your results separate from other testers.",
+  "profile.nameLabel": "What's your name?",
+  "profile.namePlaceholder": "Your name",
+  "profile.start": "Start",
+  "profile.changeProfile": "Change profile",
+  "profile.currentUser": "Current profile",
+  "profile.validationNameRequired": "Enter a name to continue.",
+
   "home.eyebrow": "Study dashboard",
+  "home.greeting": "Hi, {name}",
   "home.title": "Train for GSI A2 with your imported question bank",
   "home.subtitle":
     "Start a practice session, review weak areas, and track progress from your question bank stored in Supabase.",
+  "home.description":
+    "Train for GSI A2, review weak areas, and track your progress with a broad set of real questions.",
   "home.startTraining": "Start training",
   "home.takeRandomTest": "Take random test",
   "home.totalQuestions": "Questions imported",
