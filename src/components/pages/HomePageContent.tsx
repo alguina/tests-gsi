@@ -24,14 +24,9 @@ export function HomePageContent({ stats }: HomePageContentProps) {
         title={t("home.title")}
         description={t("home.subtitle")}
         actions={
-          <>
-            <Button href="/take-test" fullWidth className="sm:w-auto">
-              {t("home.startTraining")}
-            </Button>
-            <Button href="/test" variant="secondary" fullWidth className="sm:w-auto">
-              {t("home.takeRandomTest")}
-            </Button>
-          </>
+          <Button href="/take-test" fullWidth className="sm:w-auto">
+            {t("home.startTraining")}
+          </Button>
         }
       />
 
