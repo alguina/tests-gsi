@@ -9,6 +9,8 @@ export const en: Dictionary = {
   "nav.reviewTopics": "Review topics",
   "nav.history": "History",
   "nav.import": "Import",
+  "nav.openMenu": "Open menu",
+  "nav.closeMenu": "Close menu",
 
   "language.label": "Language",
 
