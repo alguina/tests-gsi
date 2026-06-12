@@ -17,6 +17,9 @@ export function toActionError(error: unknown): ActionResult<never> {
     if (
       message === "INVALID_QUESTION_COUNT" ||
       message === "NO_QUESTIONS_AVAILABLE" ||
+      message === "NO_FAILED_QUESTIONS" ||
+      message === "NO_TOPIC_QUESTIONS" ||
+      message === "SESSION_DRAFT_MISSING" ||
       message === "SESSION_NOT_FOUND" ||
       message === "SESSION_ALREADY_COMPLETED" ||
       message === "EMPTY_TEST" ||

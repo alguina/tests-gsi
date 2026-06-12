@@ -80,6 +80,20 @@ export function DashboardPageContent({
         />
       </section>
 
+      {stats.failedQuestionsAvailable > 0 ? (
+        <Card as="section">
+          <h2 className="text-lg font-semibold text-text-primary">
+            {t("test.reviewMistakes")}
+          </h2>
+          <p className="mt-2 text-sm text-text-secondary">
+            {t("takeTest.failedQuestionsDescription")}
+          </p>
+          <Button href="/take-test" variant="secondary" className="mt-4">
+            {t("home.reviewMistakesCta")}
+          </Button>
+        </Card>
+      ) : null}
+
       <section className="grid gap-4 lg:grid-cols-2">
         <Card as="article">
           <h2 className="text-lg font-semibold text-text-primary">

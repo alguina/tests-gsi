@@ -1,7 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { startRandomTest, submitTest } from "@/app/actions/test";
+import {
+  discardTest,
+  loadInProgressSession,
+  resumeTest,
+  saveTestDraftAction,
+  startFailedQuestionsTest,
+  startRandomTest,
+  startTopicTest,
+  submitTest,
+} from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useProfile } from "@/components/profile/ProfileProvider";
 import { TestResultsContent } from "@/components/pages/TestResultsContent";
@@ -12,7 +21,16 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { useI18n } from "@/lib/i18n/useI18n";
 import { mapTestError, mapTestErrorCode } from "@/lib/testErrors";
 import {
+  AUTOSAVE_DEBOUNCE_MS,
+  clearLocalDraftCache,
+  touchDraftState,
+  writeLocalDraftCache,
+  type TestDraftState,
+  type TopicQuestionFilter,
+} from "@/lib/testDraft";
+import {
   TEST_QUESTION_COUNTS,
+  type InProgressSession,
   type TestQuestion,
   type TestResult,
 } from "@/lib/testSession";
@@ -20,6 +38,14 @@ import { cn } from "@/lib/ui/cn";
 import { layout } from "@/lib/ui/tokens";
 
 type TestPhase = "setup" | "taking" | "results";
+type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+export type TestAutoStart = {
+  mode: "random" | "failed" | "topic";
+  count: number | "all";
+  topic?: string;
+  filter?: TopicQuestionFilter;
+};
 
 /** absent key = unanswered, null = blank, string = selected letter */
 type QuestionResponses = Record<string, string | null>;
@@ -27,7 +53,8 @@ type QuestionResponses = Record<string, string | null>;
 type QuestionResponseState = "unanswered" | "blank" | "selected";
 
 type TestPageContentProps = {
-  autoStartCount?: number;
+  autoStart?: TestAutoStart;
+  resumeSessionId?: string;
 };
 
 function getQuestionResponseState(
@@ -91,26 +118,36 @@ function findPreviousUnansweredIndex(
   return [...indices].reverse().find((index) => index < fromIndex) ?? null;
 }
 
-export function TestPageContent({ autoStartCount }: TestPageContentProps) {
+export function TestPageContent({
+  autoStart,
+  resumeSessionId,
+}: TestPageContentProps) {
   const { t } = useI18n();
   const { profile } = useProfile();
   const autoStartRef = useRef(false);
 
   const [phase, setPhase] = useState<TestPhase>("setup");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionMode, setSessionMode] = useState<string>("random");
   const [selectedCount, setSelectedCount] = useState<number>(
-    autoStartCount ?? 10,
+    typeof autoStart?.count === "number" ? autoStart.count : 10,
   );
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
   const [responses, setResponses] = useState<QuestionResponses>({});
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [draftStartedAt, setDraftStartedAt] = useState<string | null>(null);
   const [result, setResult] = useState<TestResult | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [reviewUnansweredMode, setReviewUnansweredMode] = useState(false);
   const [unansweredNotice, setUnansweredNotice] = useState<string | null>(null);
+  const [activeSession, setActiveSession] = useState<InProgressSession | null>(
+    null,
+  );
+  const [pendingStart, setPendingStart] = useState<TestAutoStart | null>(null);
 
   const currentQuestion = questions[currentIndex] ?? null;
   const isLastQuestion = currentIndex === questions.length - 1;
@@ -131,9 +168,32 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
 
   const profileId = profile?.id;
 
-  const handleStart = useCallback(
-    async (count: number) => {
-      setSelectedCount(count);
+  const applyStartedSession = useCallback(
+    (
+      started: {
+        sessionId: string;
+        questions: TestQuestion[];
+        mode?: string;
+        draft?: TestDraftState;
+      },
+    ) => {
+      setSessionId(started.sessionId);
+      setSessionMode(started.mode ?? "random");
+      setQuestions(started.questions);
+      setResponses(started.draft?.responses ?? {});
+      setCurrentIndex(started.draft?.currentIndex ?? 0);
+      setDraftStartedAt(started.draft?.startedAt ?? new Date().toISOString());
+      setReviewUnansweredMode(false);
+      setUnansweredNotice(null);
+      setActiveSession(null);
+      setPendingStart(null);
+      setPhase("taking");
+    },
+    [],
+  );
+
+  const executeStart = useCallback(
+    async (config: TestAutoStart) => {
       setIsLoading(true);
       setLoadError(null);
       setSubmitError(null);
@@ -141,36 +201,172 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
       setSessionId(null);
 
       try {
-        const started = await startRandomTest(count, profileId);
+        let started;
+
+        if (config.mode === "failed") {
+          started = await startFailedQuestionsTest(config.count, profileId);
+        } else if (config.mode === "topic" && config.topic) {
+          started = await startTopicTest(
+            config.topic,
+            config.count,
+            config.filter ?? "all",
+            profileId,
+          );
+        } else {
+          if (typeof config.count !== "number") {
+            setLoadError(mapTestErrorCode("INVALID_QUESTION_COUNT", t));
+            return;
+          }
+
+          setSelectedCount(config.count);
+          started = await startRandomTest(config.count, profileId);
+        }
+
         if (!started.ok) {
           setLoadError(mapTestErrorCode(started.code, t));
           return;
         }
 
-        setSessionId(started.data.sessionId);
-        setQuestions(started.data.questions);
-        setResponses({});
-        setCurrentIndex(0);
-        setReviewUnansweredMode(false);
-        setUnansweredNotice(null);
-        setPhase("taking");
+        applyStartedSession({
+          sessionId: started.data.sessionId,
+          questions: started.data.questions,
+          mode: started.data.mode,
+        });
       } catch (startError) {
         setLoadError(mapTestError(startError, t));
       } finally {
         setIsLoading(false);
       }
     },
-    [t, profileId],
+    [applyStartedSession, profileId, t],
+  );
+
+  const requestStart = useCallback(
+    async (config: TestAutoStart) => {
+      const inProgress = await loadInProgressSession(profileId);
+
+      if (inProgress) {
+        setActiveSession(inProgress);
+        setPendingStart(config);
+        return;
+      }
+
+      await executeStart(config);
+    },
+    [executeStart, profileId],
+  );
+
+  const handleResumeSession = useCallback(
+    async (targetSessionId: string) => {
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        const resumed = await resumeTest(targetSessionId, profileId);
+
+        if (!resumed.ok) {
+          setLoadError(mapTestErrorCode(resumed.code, t));
+          return;
+        }
+
+        applyStartedSession({
+          sessionId: resumed.data.sessionId,
+          questions: resumed.data.questions,
+          mode: resumed.data.mode,
+          draft: resumed.data.draft,
+        });
+      } catch (resumeError) {
+        setLoadError(mapTestError(resumeError, t));
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [applyStartedSession, profileId, t],
+  );
+
+  const handleDiscardActiveSession = useCallback(async () => {
+    if (!activeSession) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await discardTest(activeSession.id, profileId);
+      clearLocalDraftCache(activeSession.id);
+
+      const nextStart = pendingStart;
+
+      setActiveSession(null);
+      setPendingStart(null);
+
+      if (nextStart) {
+        await executeStart(nextStart);
+      }
+    } catch (discardError) {
+      setLoadError(mapTestError(discardError, t));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeSession, executeStart, pendingStart, profileId, t]);
+
+  const handleStartRandom = useCallback(
+    async (count: number) => {
+      await requestStart({ mode: "random", count });
+    },
+    [requestStart],
   );
 
   useEffect(() => {
-    if (!autoStartCount || autoStartRef.current) {
+    if (!resumeSessionId || autoStartRef.current) {
       return;
     }
 
     autoStartRef.current = true;
-    void handleStart(autoStartCount);
-  }, [autoStartCount, handleStart]);
+    void handleResumeSession(resumeSessionId);
+  }, [handleResumeSession, resumeSessionId]);
+
+  useEffect(() => {
+    if (!autoStart || autoStartRef.current || resumeSessionId) {
+      return;
+    }
+
+    autoStartRef.current = true;
+    void requestStart(autoStart);
+  }, [autoStart, requestStart, resumeSessionId]);
+
+  useEffect(() => {
+    if (phase !== "taking" || !sessionId || !questions.length) {
+      return;
+    }
+
+    const draft: TestDraftState = touchDraftState({
+      questionIds: questions.map((question) => question.id),
+      responses,
+      currentIndex,
+      startedAt: draftStartedAt ?? new Date().toISOString(),
+      lastActivityAt: new Date().toISOString(),
+    });
+
+    writeLocalDraftCache(sessionId, draft);
+
+    const timer = window.setTimeout(() => {
+      setSaveStatus("saving");
+      void saveTestDraftAction(sessionId, draft, profileId).then((saved) => {
+        setSaveStatus(saved.ok ? "saved" : "error");
+      });
+    }, AUTOSAVE_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    currentIndex,
+    draftStartedAt,
+    phase,
+    profileId,
+    questions,
+    responses,
+    sessionId,
+  ]);
 
   function finishReviewUnanswered() {
     setReviewUnansweredMode(false);
@@ -327,6 +523,9 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
       }
 
       setResult(submission.data);
+      if (sessionId) {
+        clearLocalDraftCache(sessionId);
+      }
       setPhase("results");
     } catch (submitFailure) {
       setSubmitError(mapTestError(submitFailure, t));
@@ -338,13 +537,18 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
   function handleRestart() {
     setPhase("setup");
     setSessionId(null);
+    setSessionMode("random");
     setSelectedCount(10);
     setQuestions([]);
     setResponses({});
     setCurrentIndex(0);
+    setDraftStartedAt(null);
+    setSaveStatus("idle");
+    setActiveSession(null);
+    setPendingStart(null);
+    setResult(null);
     setReviewUnansweredMode(false);
     setUnansweredNotice(null);
-    setResult(null);
     setLoadError(null);
     setSubmitError(null);
     autoStartRef.current = false;
@@ -364,57 +568,90 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
       />
 
       {phase === "setup" ? (
-        <Card>
-          <h2 className="text-lg font-semibold text-text-primary">
-            {t("test.numberOfQuestions")}
-          </h2>
-          <p className="mt-1 text-sm text-text-secondary">
-            {t("test.chooseSizeDescription")}
-          </p>
-
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {TEST_QUESTION_COUNTS.map((count) => (
-              <SelectableOption
-                key={count}
-                selected={selectedCount === count}
-                onClick={() => setSelectedCount(count)}
-                disabled={isLoading}
-                className="px-4 py-4 text-base"
-              >
-                {t("test.questionsCount", { count })}
-              </SelectableOption>
-            ))}
-          </div>
-
-          <div className="mt-4">
-            <Button
-              onClick={() => handleStart(selectedCount)}
-              disabled={isLoading}
-            >
-              {isLoading ? t("common.loading") : t("test.startRandom")}
-            </Button>
-          </div>
-
-          {isLoading ? (
-            <p className="mt-4 text-sm text-text-secondary">
-              {t("test.loadingQuestions")}
-            </p>
-          ) : null}
-
-          {loadError ? (
-            <Card tone="danger" padding="sm" className="mt-4 shadow-none">
-              <p>{loadError}</p>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="mt-3"
-                onClick={() => handleStart(selectedCount)}
-              >
-                {t("common.retry")}
-              </Button>
+        <>
+          {activeSession ? (
+            <Card tone="warning" padding="sm" className="shadow-none">
+              <h2 className="text-lg font-semibold text-text-primary">
+                {t("test.testInProgress")}
+              </h2>
+              <p className="mt-2 text-sm text-text-secondary">
+                {activeSession.title ?? t("test.testInProgress")}
+              </p>
+              <p className="mt-1 text-sm text-text-secondary">
+                {t("test.activeSessionPrompt")}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Button
+                  onClick={() => void handleResumeSession(activeSession.id)}
+                  disabled={isLoading}
+                >
+                  {t("test.continueActiveSession")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => void handleDiscardActiveSession()}
+                  disabled={isLoading}
+                >
+                  {pendingStart
+                    ? t("test.discardAndStartNew")
+                    : t("test.discardTest")}
+                </Button>
+              </div>
             </Card>
           ) : null}
-        </Card>
+
+          <Card>
+            <h2 className="text-lg font-semibold text-text-primary">
+              {t("test.numberOfQuestions")}
+            </h2>
+            <p className="mt-1 text-sm text-text-secondary">
+              {t("test.chooseSizeDescription")}
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {TEST_QUESTION_COUNTS.map((count) => (
+                <SelectableOption
+                  key={count}
+                  selected={selectedCount === count}
+                  onClick={() => setSelectedCount(count)}
+                  disabled={isLoading}
+                  className="px-4 py-4 text-base"
+                >
+                  {t("test.questionsCount", { count })}
+                </SelectableOption>
+              ))}
+            </div>
+
+            <div className="mt-4">
+              <Button
+                onClick={() => void handleStartRandom(selectedCount)}
+                disabled={isLoading}
+              >
+                {isLoading ? t("common.loading") : t("test.startRandom")}
+              </Button>
+            </div>
+
+            {isLoading ? (
+              <p className="mt-4 text-sm text-text-secondary">
+                {t("test.loadingQuestions")}
+              </p>
+            ) : null}
+
+            {loadError ? (
+              <Card tone="danger" padding="sm" className="mt-4 shadow-none">
+                <p>{loadError}</p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => void handleStartRandom(selectedCount)}
+                >
+                  {t("common.retry")}
+                </Button>
+              </Card>
+            ) : null}
+          </Card>
+        </>
       ) : null}
 
       {phase === "taking" && currentQuestion ? (
@@ -428,7 +665,26 @@ export function TestPageContent({ autoStartCount }: TestPageContentProps) {
                 })}
               </span>
               <span>{t("test.answeredCount", { count: answeredCount })}</span>
+              {saveStatus === "saving" ? (
+                <span className="text-xs text-text-muted">{t("test.saving")}</span>
+              ) : null}
+              {saveStatus === "saved" ? (
+                <span className="text-xs text-text-muted">{t("test.saved")}</span>
+              ) : null}
+              {saveStatus === "error" ? (
+                <span className="text-xs text-red-600">{t("test.saveFailed")}</span>
+              ) : null}
             </div>
+
+            {sessionMode !== "random" ? (
+              <p className="mt-2 text-xs font-medium uppercase tracking-wide text-text-muted">
+                {sessionMode === "failed_questions"
+                  ? t("test.modeFailedQuestions")
+                  : sessionMode === "topic"
+                    ? t("test.modeTopic")
+                    : t("test.modeLabel", { mode: sessionMode })}
+              </p>
+            ) : null}
 
             {reviewUnansweredMode ? (
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2">

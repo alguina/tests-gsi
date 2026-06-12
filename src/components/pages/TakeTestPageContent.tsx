@@ -1,23 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { loadFailedQuestionsCount } from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { useProfile } from "@/components/profile/ProfileProvider";
 import { SelectableOption } from "@/components/ui/SelectableOption";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useI18n } from "@/lib/i18n/useI18n";
-import { TEST_QUESTION_COUNTS } from "@/lib/testSession";
+import {
+  FAILED_QUESTION_COUNTS,
+  TEST_QUESTION_COUNTS,
+} from "@/lib/testSession";
 
 const COMING_SOON_MODES = [
   {
     titleKey: "takeTest.weakTopics",
     descriptionKey: "takeTest.weakTopicsDescription",
-  },
-  {
-    titleKey: "takeTest.failedQuestions",
-    descriptionKey: "takeTest.failedQuestionsDescription",
   },
   {
     titleKey: "takeTest.examSimulation",
@@ -28,10 +30,23 @@ const COMING_SOON_MODES = [
 export function TakeTestPageContent() {
   const { t } = useI18n();
   const router = useRouter();
+  const { profile } = useProfile();
   const [selectedCount, setSelectedCount] = useState<number>(10);
+  const [failedCount, setFailedCount] = useState<number | null>(null);
+  const [selectedFailedCount, setSelectedFailedCount] = useState<number | "all">(
+    10,
+  );
+
+  useEffect(() => {
+    void loadFailedQuestionsCount(profile?.id).then(setFailedCount);
+  }, [profile?.id]);
 
   function handleStartRandomTest() {
     router.push(`/test?count=${selectedCount}`);
+  }
+
+  function handleStartFailedTest() {
+    router.push(`/test?mode=failed&count=${selectedFailedCount}`);
   }
 
   return (
@@ -72,6 +87,45 @@ export function TakeTestPageContent() {
           <Button className="mt-4" onClick={handleStartRandomTest}>
             {t("test.startRandom")}
           </Button>
+        </Card>
+
+        <Card as="article">
+          <h2 className="text-xl font-semibold text-text-primary">
+            {t("takeTest.failedQuestions")}
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-text-secondary">
+            {t("takeTest.failedQuestionsDescription")}
+          </p>
+          <p className="mt-1 text-sm text-text-muted">
+            {t("test.modeFailedQuestions")}
+          </p>
+
+          {failedCount === 0 ? (
+            <EmptyState
+              title={t("test.noFailedQuestions")}
+              description={t("takeTest.failedQuestionsDescription")}
+            />
+          ) : (
+            <>
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                {FAILED_QUESTION_COUNTS.map((count) => (
+                  <SelectableOption
+                    key={String(count)}
+                    selected={selectedFailedCount === count}
+                    onClick={() => setSelectedFailedCount(count)}
+                    className="px-3 py-3"
+                  >
+                    {count === "all"
+                      ? t("test.filterAll")
+                      : t("test.questionsCount", { count })}
+                  </SelectableOption>
+                ))}
+              </div>
+              <Button className="mt-4" onClick={handleStartFailedTest}>
+                {t("test.reviewMistakes")}
+              </Button>
+            </>
+          )}
         </Card>
 
         {COMING_SOON_MODES.map((mode) => (

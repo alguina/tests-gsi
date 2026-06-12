@@ -1,3 +1,8 @@
+import {
+  countFailedQuestions,
+  getInProgressSession,
+  type InProgressSession,
+} from "@/lib/testSession";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type LatestSession = {
@@ -22,6 +27,8 @@ export type HomeStudyStats = {
   weakTopicsCount: number;
   pendingReviewQuestions: number;
   latestSession: LatestSession | null;
+  inProgressSession: InProgressSession | null;
+  failedQuestionsAvailable: number;
 };
 
 export type DashboardStats = {
@@ -34,8 +41,13 @@ export type DashboardStats = {
 
 export type TopicSummary = {
   topic: string;
+  topicTitle: string | null;
   totalQuestions: number;
   answered: number;
+  correct: number;
+  wrong: number;
+  blank: number;
+  failedCount: number;
   accuracy: number | null;
   priority: "high" | "medium" | "low";
 };
@@ -69,7 +81,7 @@ export async function getHomeStudyStats(
 ): Promise<HomeStudyStats> {
   const supabase = createServerSupabaseClient();
 
-  const [sourcesResult, questionsResult, attemptsResult, sessionsResult] =
+  const [sourcesResult, questionsResult, attemptsResult, sessionsResult, inProgressSession, failedQuestionsAvailable] =
     await Promise.all([
       supabase.from("sources").select("id", { count: "exact", head: true }),
       supabase.from("questions").select("id", { count: "exact", head: true }),
@@ -85,6 +97,8 @@ export async function getHomeStudyStats(
         .eq("user_id", userId)
         .order("completed_at", { ascending: false, nullsFirst: false })
         .limit(20),
+      getInProgressSession(userId),
+      countFailedQuestions(userId),
     ]);
 
   const attempts = attemptsResult.error ? [] : (attemptsResult.data ?? []);
@@ -110,6 +124,8 @@ export async function getHomeStudyStats(
     weakTopicsCount: 0,
     pendingReviewQuestions: wrongAttempts,
     latestSession: latestRaw ? mapSessionRow(latestRaw) : null,
+    inProgressSession,
+    failedQuestionsAvailable,
   };
 }
 
@@ -210,12 +226,17 @@ export async function getTopicSummaries(
   const supabase = createServerSupabaseClient();
 
   const [questionsResult, attemptsResult] = await Promise.all([
-    supabase.from("questions").select("topic").not("topic", "is", null),
+    supabase
+      .from("questions")
+      .select("id, topic, block")
+      .not("topic", "is", null),
     supabase
       .from("attempts")
-      .select("question_id, is_correct, is_blank, questions(topic)")
+      .select(
+        "question_id, is_correct, is_blank, answered_at, questions(topic, block)",
+      )
       .eq("user_id", userId)
-      .eq("is_blank", false),
+      .order("answered_at", { ascending: false }),
   ]);
 
   if (questionsResult.error) {
@@ -224,46 +245,102 @@ export async function getTopicSummaries(
     );
   }
 
-  const counts = new Map<string, number>();
+  const topicMeta = new Map<string, { totalQuestions: number; titles: Map<string, number> }>();
+
   for (const question of questionsResult.data ?? []) {
     const topic = String(question.topic ?? "").trim();
+    const block = String(question.block ?? "").trim();
+
     if (!topic) {
       continue;
     }
 
-    counts.set(topic, (counts.get(topic) ?? 0) + 1);
+    const current = topicMeta.get(topic) ?? {
+      totalQuestions: 0,
+      titles: new Map<string, number>(),
+    };
+    current.totalQuestions += 1;
+
+    if (block) {
+      current.titles.set(block, (current.titles.get(block) ?? 0) + 1);
+    }
+
+    topicMeta.set(topic, current);
   }
 
-  const answeredByTopic = new Map<string, { correct: number; total: number }>();
+  const latestByQuestion = new Map<
+    string,
+    { topic: string; isCorrect: boolean; isBlank: boolean }
+  >();
+  const totalsByTopic = new Map<
+    string,
+    { correct: number; wrong: number; blank: number; answered: number }
+  >();
+
   for (const attempt of attemptsResult.data ?? []) {
-    const topicRaw = (
-      attempt.questions as { topic?: string | null } | null
-    )?.topic;
-    const topic = String(topicRaw ?? "").trim();
+    const question = attempt.questions as {
+      topic?: string | null;
+      block?: string | null;
+    } | null;
+    const topic = String(question?.topic ?? "").trim();
+    const questionId = attempt.question_id as string;
 
     if (!topic) {
       continue;
     }
 
-    const current = answeredByTopic.get(topic) ?? { correct: 0, total: 0 };
-    current.total += 1;
-    if (attempt.is_correct) {
-      current.correct += 1;
+    if (!latestByQuestion.has(questionId)) {
+      latestByQuestion.set(questionId, {
+        topic,
+        isCorrect: attempt.is_correct === true,
+        isBlank: attempt.is_blank === true,
+      });
     }
-    answeredByTopic.set(topic, current);
+
+    const totals = totalsByTopic.get(topic) ?? {
+      correct: 0,
+      wrong: 0,
+      blank: 0,
+      answered: 0,
+    };
+
+    if (attempt.is_blank) {
+      totals.blank += 1;
+    } else if (attempt.is_correct) {
+      totals.correct += 1;
+      totals.answered += 1;
+    } else {
+      totals.wrong += 1;
+      totals.answered += 1;
+    }
+
+    totalsByTopic.set(topic, totals);
   }
 
-  return [...counts.entries()]
-    .map(([topic, totalQuestions]) => {
-      const stats = answeredByTopic.get(topic);
-      const answered = stats?.total ?? 0;
+  const failedByTopic = new Map<string, number>();
+  for (const [, latest] of latestByQuestion) {
+    if (latest.isCorrect || latest.isBlank) {
+      continue;
+    }
+
+    failedByTopic.set(latest.topic, (failedByTopic.get(latest.topic) ?? 0) + 1);
+  }
+
+  return [...topicMeta.entries()]
+    .map(([topic, meta]) => {
+      const totals = totalsByTopic.get(topic) ?? {
+        correct: 0,
+        wrong: 0,
+        blank: 0,
+        answered: 0,
+      };
       const accuracy =
-        answered > 0
-          ? Math.round((stats!.correct / answered) * 1000) / 10
+        totals.answered > 0
+          ? Math.round((totals.correct / totals.answered) * 1000) / 10
           : null;
 
       let priority: TopicSummary["priority"] = "low";
-      if (answered === 0) {
+      if (totals.answered === 0) {
         priority = "medium";
       } else if (accuracy !== null && accuracy < 50) {
         priority = "high";
@@ -271,7 +348,22 @@ export async function getTopicSummaries(
         priority = "medium";
       }
 
-      return { topic, totalQuestions, answered, accuracy, priority };
+      const topicTitle =
+        [...meta.titles.entries()].sort((left, right) => right[1] - left[1])[0]
+          ?.[0] ?? null;
+
+      return {
+        topic,
+        topicTitle,
+        totalQuestions: meta.totalQuestions,
+        answered: totals.answered,
+        correct: totals.correct,
+        wrong: totals.wrong,
+        blank: totals.blank,
+        failedCount: failedByTopic.get(topic) ?? 0,
+        accuracy,
+        priority,
+      };
     })
     .sort((left, right) =>
       left.topic.localeCompare(right.topic, "es", { numeric: true }),

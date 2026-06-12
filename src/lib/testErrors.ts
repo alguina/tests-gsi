@@ -28,6 +28,22 @@ export function mapTestErrorCode(code: string, t: TranslateFn): string {
     return t("test.errorEmptyTest");
   }
 
+  if (code === "NO_FAILED_QUESTIONS") {
+    return t("test.noFailedQuestions");
+  }
+
+  if (code === "NO_TOPIC_QUESTIONS") {
+    return t("test.noTopicQuestions");
+  }
+
+  if (code === "SESSION_DRAFT_MISSING") {
+    return t("test.errorSessionDraftMissing");
+  }
+
+  if (code === "ACTIVE_SESSION_EXISTS") {
+    return t("test.activeSessionPrompt");
+  }
+
   if (code === "MISSING_SUPABASE_CONFIG") {
     return t("test.errorMissingConfig");
   }

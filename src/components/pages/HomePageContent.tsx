@@ -1,5 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { discardTest } from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useProfile } from "@/components/profile/ProfileProvider";
 import { Button } from "@/components/ui/Button";
@@ -36,6 +39,23 @@ export function HomePageContent({ stats }: HomePageContentProps) {
         }
       />
 
+      {stats.inProgressSession ? (
+        <Card tone="warning" as="section">
+          <h2 className="text-lg font-semibold text-text-primary">
+            {t("test.testInProgress")}
+          </h2>
+          <p className="mt-2 text-sm text-text-secondary">
+            {stats.inProgressSession.title ?? t("test.testInProgress")}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Button href={`/test?resume=${stats.inProgressSession.id}`}>
+              {t("home.continueInProgressTest")}
+            </Button>
+            <DiscardInProgressButton sessionId={stats.inProgressSession.id} />
+          </div>
+        </Card>
+      ) : null}
+
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <StatCard label={t("home.totalQuestions")} value={stats.totalQuestionsImported} />
         <StatCard label={t("home.totalTests")} value={stats.totalSourcesImported} />
@@ -53,14 +73,23 @@ export function HomePageContent({ stats }: HomePageContentProps) {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <RecommendedCard hasAttempts={stats.totalQuestionsAnswered > 0} />
+        <RecommendedCard
+          hasAttempts={stats.totalQuestionsAnswered > 0}
+          failedQuestionsAvailable={stats.failedQuestionsAvailable}
+        />
         <LatestSessionCard latestSession={stats.latestSession} />
       </section>
     </PageContainer>
   );
 }
 
-function RecommendedCard({ hasAttempts }: { hasAttempts: boolean }) {
+function RecommendedCard({
+  hasAttempts,
+  failedQuestionsAvailable,
+}: {
+  hasAttempts: boolean;
+  failedQuestionsAvailable: number;
+}) {
   const { t } = useI18n();
 
   return (
@@ -83,7 +112,36 @@ function RecommendedCard({ hasAttempts }: { hasAttempts: boolean }) {
           ? t("home.suggestedTopicsWeak")
           : t("home.suggestedTopicsMixed")}
       </div>
+      {failedQuestionsAvailable > 0 ? (
+        <Button href="/take-test" variant="secondary" className="mt-4">
+          {t("home.reviewMistakesCta")}
+        </Button>
+      ) : null}
     </Card>
+  );
+}
+
+function DiscardInProgressButton({ sessionId }: { sessionId: string }) {
+  const { t } = useI18n();
+  const { profile } = useProfile();
+  const router = useRouter();
+  const [isDiscarding, setIsDiscarding] = useState(false);
+
+  async function handleDiscard() {
+    setIsDiscarding(true);
+    await discardTest(sessionId, profile?.id);
+    router.refresh();
+    setIsDiscarding(false);
+  }
+
+  return (
+    <Button
+      variant="secondary"
+      onClick={() => void handleDiscard()}
+      disabled={isDiscarding}
+    >
+      {t("home.discardInProgressTest")}
+    </Button>
   );
 }
 

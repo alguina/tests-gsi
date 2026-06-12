@@ -80,6 +80,7 @@ create table if not exists test_sessions (
   wrong_count integer not null default 0,
   blank_count integer not null default 0,
   net_score numeric not null default 0,
+  draft_state jsonb,
   started_at timestamptz not null default now(),
   completed_at timestamptz,
   created_at timestamptz not null default now()
@@ -106,6 +107,30 @@ create index if not exists test_sessions_completed_at_idx on test_sessions (comp
 create index if not exists attempts_session_id_idx on attempts (session_id);
 create index if not exists attempts_user_id_idx on attempts (user_id);
 create index if not exists attempts_question_id_idx on attempts (question_id);
+
+create table if not exists question_bookmarks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  question_id uuid not null references questions(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (user_id, question_id)
+);
+
+create index if not exists question_bookmarks_user_id_idx
+  on question_bookmarks (user_id);
+
+create table if not exists question_notes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  question_id uuid not null references questions(id) on delete cascade,
+  note text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, question_id)
+);
+
+create index if not exists question_notes_user_id_idx
+  on question_notes (user_id);
 
 -- Returns questions that have at least one correct answer, in random order.
 create or replace function public.get_random_questions(question_limit integer)
@@ -151,6 +176,8 @@ alter table public.answers disable row level security;
 alter table public.users disable row level security;
 alter table public.test_sessions disable row level security;
 alter table public.attempts disable row level security;
+alter table public.question_bookmarks disable row level security;
+alter table public.question_notes disable row level security;
 
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on public.sources to anon, authenticated;
@@ -159,5 +186,7 @@ grant select, insert, update, delete on public.answers to anon, authenticated;
 grant select, insert, update, delete on public.users to anon, authenticated;
 grant select, insert, update, delete on public.test_sessions to anon, authenticated;
 grant select, insert, update, delete on public.attempts to anon, authenticated;
+grant select, insert, update, delete on public.question_bookmarks to anon, authenticated;
+grant select, insert, update, delete on public.question_notes to anon, authenticated;
 grant execute on function public.get_random_questions(integer) to anon, authenticated;
 grant execute on function public.ensure_default_user() to anon, authenticated;
