@@ -1,5 +1,6 @@
 import { TestPageContent } from "@/components/pages/TestPageContent";
 import type { TopicQuestionFilter } from "@/lib/testDraft";
+import { RECOMMENDED_DEFAULT_COUNT } from "@/lib/recommendations/constants";
 import {
   FAILED_QUESTION_COUNTS,
   TEST_QUESTION_COUNTS,
@@ -77,6 +78,19 @@ export default async function TestPage({ searchParams }: TestPageProps) {
         />
       );
     }
+  }
+
+  if (mode === "recommended") {
+    const count = Number(params.count);
+    const recommendedCount = [10, 25, 50, 100].includes(count)
+      ? count
+      : RECOMMENDED_DEFAULT_COUNT;
+
+    return (
+      <TestPageContent
+        autoStart={{ mode: "recommended", count: recommendedCount }}
+      />
+    );
   }
 
   const count = Number(params.count);

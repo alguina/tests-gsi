@@ -20,14 +20,18 @@ import type { TestDraftState, TopicQuestionFilter } from "@/lib/testDraft";
 import {
   countFailedQuestions,
   discardTestSession,
+  getExamSessionResult,
   getInProgressSession,
   getSessionResult,
   resumeTestSession,
   saveTestDraft,
+  startExamSimulationSession,
   startFailedQuestionsSession,
   startRandomTestSession,
+  startRecommendedTestSession,
   startTopicTestSession,
   submitTestSession,
+  type ExamTestResult,
   type InProgressSession,
   type ResumedTestSession,
   type StartedTestSession,
@@ -35,6 +39,8 @@ import {
   type TestResult,
   type TestSelection,
 } from "@/lib/testSession";
+import { buildStudyRecommendation } from "@/lib/recommendations";
+import type { StudyRecommendation } from "@/lib/recommendations";
 
 async function resolveUserId(clientUserId?: string): Promise<string> {
   if (clientUserId) {
@@ -88,6 +94,49 @@ export async function startTopicTest(
     return actionOk(data);
   } catch (error) {
     return toActionError(error);
+  }
+}
+
+export async function startRecommendedTest(
+  count: number,
+  userId?: string,
+): Promise<ActionResult<StartedTestSession>> {
+  try {
+    const resolvedUserId = await resolveUserId(userId);
+    const data = await startRecommendedTestSession(count, resolvedUserId);
+    return actionOk(data);
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+export async function startExamSimulation(
+  questionCount: number,
+  timeLimitSeconds: number,
+  userId?: string,
+): Promise<ActionResult<StartedTestSession>> {
+  try {
+    const resolvedUserId = await resolveUserId(userId);
+    const data = await startExamSimulationSession(
+      questionCount,
+      timeLimitSeconds,
+      resolvedUserId,
+    );
+    return actionOk(data);
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+export async function loadStudyRecommendation(
+  userId?: string,
+  count?: number,
+): Promise<StudyRecommendation | null> {
+  try {
+    const resolvedUserId = await resolveUserId(userId);
+    return await buildStudyRecommendation(resolvedUserId, count);
+  } catch {
+    return null;
   }
 }
 
@@ -158,6 +207,7 @@ export async function submitTest(
   questions: TestQuestion[],
   selections: TestSelection[],
   userId?: string,
+  durationSeconds?: number,
 ): Promise<ActionResult<TestResult>> {
   try {
     const resolvedUserId = await resolveUserId(userId);
@@ -166,10 +216,24 @@ export async function submitTest(
       questions,
       selections,
       resolvedUserId,
+      durationSeconds !== undefined ? { durationSeconds } : undefined,
     );
     return actionOk(data);
   } catch (error) {
     return toActionError(error);
+  }
+}
+
+export async function loadExamSessionResult(
+  sessionId: string,
+): Promise<ExamTestResult | null> {
+  try {
+    const cookieStore = await cookies();
+    const userId =
+      cookieStore.get(PROFILE_COOKIE_NAME)?.value ?? DEFAULT_USER_ID;
+    return await getExamSessionResult(sessionId, userId);
+  } catch {
+    return null;
   }
 }
 

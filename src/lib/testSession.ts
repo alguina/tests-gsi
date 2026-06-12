@@ -5,6 +5,7 @@ import {
   type TestDraftState,
   type TopicQuestionFilter,
 } from "@/lib/testDraft";
+import { logServerEvent } from "@/lib/server/logger";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const TEST_QUESTION_COUNTS = [10, 25, 50, 100] as const;
@@ -13,6 +14,13 @@ export const TOPIC_QUESTION_COUNTS = [10, 25, 50, "all"] as const;
 export const TEST_MODE_RANDOM = "random" as const;
 export const TEST_MODE_FAILED = "failed_questions" as const;
 export const TEST_MODE_TOPIC = "topic" as const;
+export const TEST_MODE_RECOMMENDED = "recommended" as const;
+export const TEST_MODE_EXAM = "exam_simulation" as const;
+
+export const EXAM_QUESTION_COUNTS = [50, 100] as const;
+export const EXAM_TIME_LIMITS_MINUTES = [60, 90, 120] as const;
+export const EXAM_DEFAULT_QUESTION_COUNT = 100;
+export const EXAM_DEFAULT_TIME_LIMIT_SECONDS = 120 * 60;
 
 export type TestAnswer = {
   id: string;
@@ -57,6 +65,34 @@ export type TestResult = {
   netScore: number;
   accuracyPercent: number | null;
   questions: TestQuestionResult[];
+  durationSeconds?: number | null;
+  timeLimitSeconds?: number | null;
+  normalizedNetScore?: number | null;
+};
+
+export type ExamTopicBreakdown = {
+  topic: string;
+  topicTitle: string | null;
+  correct: number;
+  wrong: number;
+  blank: number;
+  accuracy: number | null;
+};
+
+export type ExamSimulationComparison = {
+  sessionId: string;
+  completedAt: string;
+  netScore: number;
+  normalizedNetScore: number | null;
+  durationSeconds: number | null;
+};
+
+export type ExamTestResult = TestResult & {
+  durationSeconds: number | null;
+  timeLimitSeconds: number | null;
+  normalizedNetScore: number | null;
+  previousSimulations: ExamSimulationComparison[];
+  topicBreakdown: ExamTopicBreakdown[];
 };
 
 export type StartedTestSession = {
@@ -68,6 +104,8 @@ export type StartedTestSession = {
 
 export type ResumedTestSession = StartedTestSession & {
   draft: TestDraftState;
+  timeLimitSeconds?: number | null;
+  startedAt?: string;
 };
 
 export type InProgressSession = {
@@ -78,6 +116,7 @@ export type InProgressSession = {
   startedAt: string;
   lastActivityAt: string | null;
   answeredCount: number;
+  timeLimitSeconds?: number | null;
 };
 
 type DbQuestionRow = {
@@ -107,7 +146,41 @@ type DbSessionRow = {
   blank_count: number;
   net_score: number;
   completed_at: string | null;
+  duration_seconds?: number | null;
+  time_limit_seconds?: number | null;
+  metadata?: Record<string, unknown> | null;
 };
+
+type SessionQuestionInsert = {
+  questionId: string;
+  position: number;
+  selectionReason?: string;
+  metadata?: Record<string, unknown>;
+};
+
+async function persistSessionQuestions(
+  sessionId: string,
+  items: SessionQuestionInsert[],
+): Promise<void> {
+  if (!items.length) {
+    return;
+  }
+
+  const supabase = createServerSupabaseClient();
+  const rows = items.map((item) => ({
+    session_id: sessionId,
+    question_id: item.questionId,
+    position: item.position,
+    selection_reason: item.selectionReason ?? null,
+    metadata: item.metadata ?? null,
+  }));
+
+  const { error } = await supabase.from("session_questions").insert(rows);
+
+  if (error) {
+    throw new Error(`Failed to save session questions: ${error.message}`);
+  }
+}
 
 export async function countEligibleQuestions(): Promise<number> {
   const supabase = createServerSupabaseClient();
@@ -233,6 +306,7 @@ export async function saveTestDraft(
     .is("completed_at", null);
 
   if (error) {
+    logServerEvent("autosave_failed", { sessionId, message: error.message }, "warn");
     throw new Error(`Failed to save draft: ${error.message}`);
   }
 }
@@ -244,7 +318,7 @@ export async function getInProgressSession(
 
   const { data, error } = await supabase
     .from("test_sessions")
-    .select("id, mode, title, total_questions, started_at, draft_state")
+    .select("id, mode, title, total_questions, started_at, draft_state, time_limit_seconds")
     .eq("user_id", userId)
     .is("completed_at", null)
     .not("draft_state", "is", null)
@@ -268,6 +342,7 @@ export async function getInProgressSession(
     startedAt: data.started_at,
     lastActivityAt: draft?.lastActivityAt ?? null,
     answeredCount,
+    timeLimitSeconds: data.time_limit_seconds ?? null,
   };
 }
 
@@ -279,7 +354,9 @@ export async function resumeTestSession(
 
   const { data: session, error } = await supabase
     .from("test_sessions")
-    .select("id, mode, title, draft_state, completed_at")
+    .select(
+      "id, mode, title, draft_state, completed_at, time_limit_seconds, started_at",
+    )
     .eq("id", sessionId)
     .eq("user_id", userId)
     .maybeSingle();
@@ -310,6 +387,8 @@ export async function resumeTestSession(
     mode: session.mode,
     title: session.title,
     draft,
+    timeLimitSeconds: session.time_limit_seconds ?? null,
+    startedAt: session.started_at,
   };
 }
 
@@ -468,7 +547,8 @@ export async function selectTopicQuestionIds(
   const { data: topicQuestions, error } = await supabase
     .from("questions")
     .select("id")
-    .eq("topic", topic);
+    .eq("topic", topic)
+    .eq("is_active", true);
 
   if (error) {
     throw new Error(`Failed to load topic questions: ${error.message}`);
@@ -584,6 +664,144 @@ export async function startTopicTestSession(
   };
 }
 
+export async function startRecommendedTestSession(
+  requestedCount: number,
+  userId: string = DEFAULT_USER_ID,
+): Promise<StartedTestSession & { recommendationMetadata: Record<string, unknown> }> {
+  const { buildStudyRecommendation } = await import(
+    "@/lib/recommendations/buildRecommendation"
+  );
+  const recommendation = await buildStudyRecommendation(userId, requestedCount);
+
+  if (!recommendation.questionIds.length) {
+    throw new Error("NO_QUESTIONS_AVAILABLE");
+  }
+
+  const questions = await fetchTestQuestionsByIds(recommendation.questionIds);
+
+  if (!questions.length) {
+    throw new Error("NO_QUESTIONS_AVAILABLE");
+  }
+
+  const questionIds = questions.map((question) => question.id);
+  const draft = createInitialDraftState(questionIds);
+  const supabase = createServerSupabaseClient();
+  const metadata = {
+    reasons: recommendation.reasons,
+    composition: recommendation.composition,
+    bucketTargets: recommendation.metadata.bucketTargets,
+    topics: recommendation.topics,
+    generatedAt: recommendation.metadata.generatedAt,
+  };
+
+  const { data: session, error: sessionError } = await supabase
+    .from("test_sessions")
+    .insert({
+      user_id: userId,
+      mode: TEST_MODE_RECOMMENDED,
+      title: `Recommended training (${questions.length})`,
+      total_questions: questions.length,
+      correct_count: 0,
+      wrong_count: 0,
+      blank_count: 0,
+      net_score: 0,
+      draft_state: draft,
+      metadata,
+    })
+    .select("id")
+    .single();
+
+  if (sessionError || !session) {
+    throw new Error(
+      `Failed to create test session: ${sessionError?.message ?? "Unknown error"}`,
+    );
+  }
+
+  const signalById = new Map(
+    recommendation.questionIds.map((questionId, index) => [questionId, index]),
+  );
+
+  await persistSessionQuestions(
+    session.id,
+    questionIds.map((questionId, index) => ({
+      questionId,
+      position: index + 1,
+      selectionReason: "recommended",
+      metadata: { order: signalById.get(questionId) ?? index },
+    })),
+  );
+
+  return {
+    sessionId: session.id,
+    questions,
+    mode: TEST_MODE_RECOMMENDED,
+    title: `Recommended training (${questions.length})`,
+    recommendationMetadata: metadata,
+  };
+}
+
+export async function startExamSimulationSession(
+  questionCount: number = EXAM_DEFAULT_QUESTION_COUNT,
+  timeLimitSeconds: number = EXAM_DEFAULT_TIME_LIMIT_SECONDS,
+  userId: string = DEFAULT_USER_ID,
+): Promise<StartedTestSession> {
+  if (!Number.isInteger(questionCount) || questionCount <= 0) {
+    throw new Error("INVALID_QUESTION_COUNT");
+  }
+
+  if (!Number.isInteger(timeLimitSeconds) || timeLimitSeconds <= 0) {
+    throw new Error("INVALID_TIME_LIMIT");
+  }
+
+  const questions = await fetchRandomTestQuestions(questionCount);
+  const questionIds = questions.map((question) => question.id);
+  const draft = createInitialDraftState(questionIds);
+  const supabase = createServerSupabaseClient();
+
+  const { data: session, error: sessionError } = await supabase
+    .from("test_sessions")
+    .insert({
+      user_id: userId,
+      mode: TEST_MODE_EXAM,
+      title: `Exam simulation (${questions.length})`,
+      total_questions: questions.length,
+      correct_count: 0,
+      wrong_count: 0,
+      blank_count: 0,
+      net_score: 0,
+      draft_state: draft,
+      time_limit_seconds: timeLimitSeconds,
+      metadata: {
+        questionCount,
+        timeLimitSeconds,
+      },
+    })
+    .select("id")
+    .single();
+
+  if (sessionError || !session) {
+    throw new Error(
+      `Failed to create test session: ${sessionError?.message ?? "Unknown error"}`,
+    );
+  }
+
+  await persistSessionQuestions(
+    session.id,
+    questionIds.map((questionId, index) => ({
+      questionId,
+      position: index + 1,
+      selectionReason: "exam_random",
+    })),
+  );
+
+  return {
+    sessionId: session.id,
+    questions,
+    mode: TEST_MODE_EXAM,
+    title: `Exam simulation (${questions.length})`,
+  };
+}
+
 export async function fetchRandomTestQuestions(
   limit: number,
 ): Promise<TestQuestion[]> {
@@ -655,6 +873,7 @@ export async function submitTestSession(
   questions: TestQuestion[],
   selections: TestSelection[],
   userId: string = DEFAULT_USER_ID,
+  options?: { durationSeconds?: number },
 ): Promise<TestResult> {
   if (!sessionId) {
     throw new Error("MISSING_SESSION_ID");
@@ -662,6 +881,47 @@ export async function submitTestSession(
 
   if (!questions.length) {
     throw new Error("EMPTY_TEST");
+  }
+
+  const supabase = createServerSupabaseClient();
+
+  const { data: existingSession, error: sessionLookupError } = await supabase
+    .from("test_sessions")
+    .select("id, mode, title, user_id, completed_at")
+    .eq("id", sessionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (sessionLookupError) {
+    logServerEvent("submit_failed", {
+      sessionId,
+      stage: "lookup",
+      message: sessionLookupError.message,
+    }, "error");
+    throw new Error(
+      `Failed to load test session: ${sessionLookupError.message}`,
+    );
+  }
+
+  if (!existingSession) {
+    throw new Error("SESSION_NOT_FOUND");
+  }
+
+  if (existingSession.completed_at) {
+    const existingResult = await getSessionResult(sessionId, userId);
+
+    if (existingResult) {
+      return existingResult;
+    }
+
+    throw new Error("SESSION_ALREADY_COMPLETED");
+  }
+
+  const questionIds = questions.map((question) => question.id);
+  const serverQuestions = await fetchTestQuestionsByIds(questionIds);
+
+  if (serverQuestions.length !== questionIds.length) {
+    throw new Error("QUESTIONS_FETCH_FAILED");
   }
 
   const selectionMap = new Map(
@@ -675,14 +935,24 @@ export async function submitTestSession(
   let wrongCount = 0;
   let blankCount = 0;
 
-  const questionResults: TestQuestionResult[] = questions.map((question) => {
+  const questionResults: TestQuestionResult[] = serverQuestions.map((question) => {
     const selectedLetter = normalizeSelectedLetter(
       selectionMap.get(question.id) ?? null,
     );
     const correctAnswer = question.answers.find((answer) => answer.isCorrect);
-    const correctLetter = correctAnswer?.letter ?? "";
-    const isBlank = selectedLetter === null;
-    const isCorrect = !isBlank && selectedLetter === correctLetter;
+
+    if (!correctAnswer) {
+      throw new Error("QUESTIONS_FETCH_FAILED");
+    }
+
+    const validLetters = new Set(
+      question.answers.map((answer) => answer.letter.trim().toUpperCase()),
+    );
+    const normalizedSelection =
+      selectedLetter && validLetters.has(selectedLetter) ? selectedLetter : null;
+    const correctLetter = correctAnswer.letter;
+    const isBlank = normalizedSelection === null;
+    const isCorrect = !isBlank && normalizedSelection === correctLetter;
 
     if (isBlank) {
       blankCount += 1;
@@ -696,7 +966,7 @@ export async function submitTestSession(
       questionId: question.id,
       text: question.text,
       metadata: formatQuestionMetadata(question),
-      selectedLetter,
+      selectedLetter: normalizedSelection,
       correctLetter,
       isCorrect,
       isBlank,
@@ -711,52 +981,51 @@ export async function submitTestSession(
       ? Math.round((correctCount / answeredCount) * 1000) / 10
       : null;
 
-  const supabase = createServerSupabaseClient();
   const completedAt = new Date().toISOString();
 
-  const { data: existingSession, error: sessionLookupError } = await supabase
-    .from("test_sessions")
-    .select("id, mode, title, user_id, completed_at")
-    .eq("id", sessionId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (sessionLookupError) {
-    throw new Error(
-      `Failed to load test session: ${sessionLookupError.message}`,
-    );
-  }
-
-  if (!existingSession) {
-    throw new Error("SESSION_NOT_FOUND");
-  }
-
-  if (existingSession.completed_at) {
-    throw new Error("SESSION_ALREADY_COMPLETED");
-  }
-
-  const { error: sessionUpdateError } = await supabase
+  const { data: updatedSession, error: sessionUpdateError } = await supabase
     .from("test_sessions")
     .update({
-      total_questions: questions.length,
+      total_questions: serverQuestions.length,
       correct_count: correctCount,
       wrong_count: wrongCount,
       blank_count: blankCount,
       net_score: netScore,
       completed_at: completedAt,
       draft_state: null,
+      ...(options?.durationSeconds !== undefined
+        ? { duration_seconds: options.durationSeconds }
+        : {}),
     })
     .eq("id", sessionId)
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .is("completed_at", null)
+    .select("id")
+    .maybeSingle();
 
   if (sessionUpdateError) {
+    logServerEvent("submit_failed", {
+      sessionId,
+      stage: "update_session",
+      message: sessionUpdateError.message,
+    }, "error");
     throw new Error(
       `Failed to save test session: ${sessionUpdateError.message}`,
     );
   }
 
+  if (!updatedSession) {
+    const existingResult = await getSessionResult(sessionId, userId);
+
+    if (existingResult) {
+      return existingResult;
+    }
+
+    throw new Error("SESSION_ALREADY_COMPLETED");
+  }
+
   const attemptRows = questionResults.map((result) => {
-    const question = questions.find((item) => item.id === result.questionId);
+    const question = serverQuestions.find((item) => item.id === result.questionId);
     const correctAnswer = question?.answers.find((answer) => answer.isCorrect);
     const selectedAnswer = question?.answers.find(
       (answer) => answer.letter === result.selectedLetter,
@@ -776,11 +1045,17 @@ export async function submitTestSession(
     };
   });
 
-  const { error: attemptsError } = await supabase
-    .from("attempts")
-    .insert(attemptRows);
+  const { error: attemptsError } = await supabase.from("attempts").upsert(
+    attemptRows,
+    { onConflict: "session_id,question_id", ignoreDuplicates: true },
+  );
 
   if (attemptsError) {
+    logServerEvent("submit_failed", {
+      sessionId,
+      stage: "insert_attempts",
+      message: attemptsError.message,
+    }, "error");
     throw new Error(`Failed to save attempts: ${attemptsError.message}`);
   }
 
@@ -794,6 +1069,140 @@ export async function submitTestSession(
     netScore,
     accuracyPercent,
     questions: questionResults,
+    durationSeconds: options?.durationSeconds ?? null,
+  };
+}
+
+export async function getExamSessionResult(
+  sessionId: string,
+  userId: string = DEFAULT_USER_ID,
+): Promise<ExamTestResult | null> {
+  const baseResult = await getSessionResult(sessionId, userId);
+
+  if (!baseResult || baseResult.mode !== TEST_MODE_EXAM) {
+    return null;
+  }
+
+  const supabase = createServerSupabaseClient();
+
+  const { data: session } = await supabase
+    .from("test_sessions")
+    .select("duration_seconds, time_limit_seconds, completed_at")
+    .eq("id", sessionId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const { data: previousSessions } = await supabase
+    .from("test_sessions")
+    .select(
+      "id, completed_at, net_score, correct_count, wrong_count, duration_seconds",
+    )
+    .eq("user_id", userId)
+    .eq("mode", TEST_MODE_EXAM)
+    .not("completed_at", "is", null)
+    .neq("id", sessionId)
+    .order("completed_at", { ascending: false })
+    .limit(10);
+
+  const answeredCount = baseResult.correctCount + baseResult.wrongCount;
+  const normalizedNetScore =
+    answeredCount > 0
+      ? Math.round((baseResult.netScore * (100 / answeredCount)) * 100) / 100
+      : null;
+
+  const { data: attemptRows } = await supabase
+    .from("attempts")
+    .select(
+      "is_correct, is_blank, questions(topic, block)",
+    )
+    .eq("session_id", sessionId)
+    .eq("user_id", userId);
+
+  const topicStats = new Map<
+    string,
+    {
+      titles: Map<string, number>;
+      correct: number;
+      wrong: number;
+      blank: number;
+    }
+  >();
+
+  for (const attempt of attemptRows ?? []) {
+    const question = extractQuestionRow(
+      attempt.questions as DbQuestionRow | DbQuestionRow[] | null,
+    );
+    const topic = String(question?.topic ?? "").trim() || "unknown";
+    const block = String(question?.block ?? "").trim();
+    const stats = topicStats.get(topic) ?? {
+      titles: new Map<string, number>(),
+      correct: 0,
+      wrong: 0,
+      blank: 0,
+    };
+
+    if (block) {
+      stats.titles.set(block, (stats.titles.get(block) ?? 0) + 1);
+    }
+
+    if (attempt.is_blank) {
+      stats.blank += 1;
+    } else if (attempt.is_correct) {
+      stats.correct += 1;
+    } else {
+      stats.wrong += 1;
+    }
+
+    topicStats.set(topic, stats);
+  }
+
+  const topicBreakdown: ExamTopicBreakdown[] = [...topicStats.entries()].map(
+    ([topic, stats]) => {
+      const answered = stats.correct + stats.wrong;
+      const topicTitle =
+        [...stats.titles.entries()].sort((left, right) => right[1] - left[1])[0]
+          ?.[0] ?? null;
+
+      return {
+        topic,
+        topicTitle,
+        correct: stats.correct,
+        wrong: stats.wrong,
+        blank: stats.blank,
+        accuracy:
+          answered > 0
+            ? Math.round((stats.correct / answered) * 1000) / 10
+            : null,
+      };
+    },
+  );
+
+  const previousSimulations: ExamSimulationComparison[] = (
+    previousSessions ?? []
+  ).map((row) => {
+    const prevAnswered = row.correct_count + row.wrong_count;
+
+    return {
+      sessionId: row.id,
+      completedAt: row.completed_at as string,
+      netScore: Number(row.net_score ?? 0),
+      normalizedNetScore:
+        prevAnswered > 0
+          ? Math.round(
+              (Number(row.net_score ?? 0) * (100 / prevAnswered)) * 100,
+            ) / 100
+          : null,
+      durationSeconds: row.duration_seconds ?? null,
+    };
+  });
+
+  return {
+    ...baseResult,
+    durationSeconds: session?.duration_seconds ?? null,
+    timeLimitSeconds: session?.time_limit_seconds ?? null,
+    normalizedNetScore,
+    previousSimulations,
+    topicBreakdown,
   };
 }
 

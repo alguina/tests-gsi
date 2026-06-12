@@ -1,6 +1,18 @@
 import {
+  buildPerformanceTrend,
+  buildTopicPerformance,
+  computeNetScore,
+  computeStudyStreak,
+  countActivitySince,
+  countFailedAtLeastTwice,
+  normalizeNetScoreTo100,
+  type PerformanceTrendPoint,
+  type TopicPerformanceRow,
+} from "@/lib/stats/userMetrics";
+import {
   countFailedQuestions,
   getInProgressSession,
+  TEST_MODE_EXAM,
   type InProgressSession,
 } from "@/lib/testSession";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -37,6 +49,27 @@ export type DashboardStats = {
   globalAccuracy: number | null;
   averageNetScore: number | null;
   mostFailedTopics: Array<{ topic: string; topicTitle: string | null; count: number }>;
+};
+
+export type DashboardStudyMetrics = {
+  completedSessions: number;
+  totalAnsweredQuestions: number;
+  uniqueQuestionsSeen: number;
+  correctTotal: number;
+  wrongTotal: number;
+  blankTotal: number;
+  globalAccuracy: number | null;
+  averageNetScore: number | null;
+  normalizedNetScorePer100: number | null;
+  failedAtLeastTwice: number;
+  unseenQuestions: number;
+  bookmarkedQuestions: number;
+  currentStreakDays: number;
+  activityLast7Days: number;
+  activityLast30Days: number;
+  mostFailedTopics: Array<{ topic: string; topicTitle: string | null; count: number }>;
+  performanceTrend: PerformanceTrendPoint[];
+  topicPerformance: TopicPerformanceRow[];
 };
 
 export type TopicSummary = {
@@ -109,19 +142,32 @@ export async function getHomeStudyStats(
     (attempt) => !attempt.is_blank && !attempt.is_correct,
   ).length;
 
+  const trainingSessions = completedSessions.filter(
+    (session) => session.mode !== TEST_MODE_EXAM,
+  );
+
+  let weakTopicsCount = 0;
+
+  if (attempts.length > 0) {
+    const topicRows = await getTopicSummaries(userId);
+    weakTopicsCount = topicRows.filter(
+      (topic) => topic.priority === "high" || topic.priority === "medium",
+    ).length;
+  }
+
   return {
     userId,
     totalSourcesImported: sourcesResult.count ?? 0,
     totalQuestionsImported: questionsResult.count ?? 0,
     totalQuestionsAnswered: attempts.length,
     totalSessionsCompleted: completedSessions.length,
-    averageNetScore: completedSessions.length
-      ? completedSessions.reduce(
+    averageNetScore: trainingSessions.length
+      ? trainingSessions.reduce(
           (total, session) => total + Number(session.net_score ?? 0),
           0,
-        ) / completedSessions.length
+        ) / trainingSessions.length
       : null,
-    weakTopicsCount: 0,
+    weakTopicsCount,
     pendingReviewQuestions: wrongAttempts,
     latestSession: latestRaw ? mapSessionRow(latestRaw) : null,
     inProgressSession,
@@ -138,7 +184,7 @@ export async function getDashboardStats(
     [
       supabase
         .from("test_sessions")
-        .select("net_score, completed_at")
+        .select("mode, net_score, completed_at")
         .eq("user_id", userId)
         .not("completed_at", "is", null),
       supabase
@@ -203,20 +249,134 @@ export async function getDashboardStats(
     .sort((left, right) => right.count - left.count)
     .slice(0, 5);
 
+  const trainingSessions = sessions.filter(
+    (session) => session.mode !== TEST_MODE_EXAM,
+  );
+
   return {
-    totalSessions: sessions.length,
+    totalSessions: trainingSessions.length,
     totalQuestionsAnswered: attempts.length,
     globalAccuracy: answeredAttempts.length
       ? Math.round((correctAttempts.length / answeredAttempts.length) * 1000) /
         10
       : null,
-    averageNetScore: sessions.length
-      ? sessions.reduce(
+    averageNetScore: trainingSessions.length
+      ? trainingSessions.reduce(
           (total, session) => total + Number(session.net_score ?? 0),
           0,
-        ) / sessions.length
+        ) / trainingSessions.length
       : null,
     mostFailedTopics,
+  };
+}
+
+export async function getDashboardStudyMetrics(
+  userId: string,
+): Promise<DashboardStudyMetrics> {
+  const supabase = createServerSupabaseClient();
+
+  const [
+    sessionsResult,
+    attemptsResult,
+    questionsResult,
+    bookmarksResult,
+    eligibleResult,
+  ] = await Promise.all([
+    supabase
+      .from("test_sessions")
+      .select(
+        "mode, completed_at, correct_count, wrong_count, blank_count, net_score, total_questions",
+      )
+      .eq("user_id", userId)
+      .not("completed_at", "is", null),
+    supabase
+      .from("attempts")
+      .select("question_id, is_correct, is_blank, answered_at")
+      .eq("user_id", userId),
+    supabase.from("questions").select("id, topic, block").not("topic", "is", null),
+    supabase
+      .from("question_bookmarks")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId),
+    supabase.from("answers").select("question_id").eq("is_correct", true),
+  ]);
+
+  const sessions = sessionsResult.data ?? [];
+  const attempts = attemptsResult.data ?? [];
+  const questions = questionsResult.data ?? [];
+  const eligibleIds = new Set(
+    (eligibleResult.data ?? []).map((row) => row.question_id as string),
+  );
+  const eligibleQuestions = questions.filter((question) =>
+    eligibleIds.has(question.id as string),
+  );
+
+  const answeredAttempts = attempts.filter((attempt) => !attempt.is_blank);
+  const correctTotal = answeredAttempts.filter(
+    (attempt) => attempt.is_correct,
+  ).length;
+  const wrongTotal = answeredAttempts.filter(
+    (attempt) => !attempt.is_correct,
+  ).length;
+  const blankTotal = attempts.filter((attempt) => attempt.is_blank).length;
+  const uniqueQuestionsSeen = new Set(
+    attempts.map((attempt) => attempt.question_id as string),
+  ).size;
+  const unseenQuestions = Math.max(
+    0,
+    eligibleQuestions.length - uniqueQuestionsSeen,
+  );
+
+  const trainingSessions = sessions.filter(
+    (session) => session.mode !== TEST_MODE_EXAM,
+  );
+  const netScore = computeNetScore(correctTotal, wrongTotal);
+  const attemptDates = attempts.map((attempt) => attempt.answered_at as string);
+
+  const topicPerformance = buildTopicPerformance({
+    questions: eligibleQuestions,
+    attempts,
+  });
+
+  const mostFailedTopics = [...topicPerformance]
+    .filter((topic) => topic.wrong > 0)
+    .sort((left, right) => right.wrong - left.wrong)
+    .slice(0, 5)
+    .map((topic) => ({
+      topic: topic.topic,
+      topicTitle: topic.topicTitle,
+      count: topic.wrong,
+    }));
+
+  return {
+    completedSessions: trainingSessions.length,
+    totalAnsweredQuestions: attempts.length,
+    uniqueQuestionsSeen,
+    correctTotal,
+    wrongTotal,
+    blankTotal,
+    globalAccuracy: answeredAttempts.length
+      ? Math.round((correctTotal / answeredAttempts.length) * 1000) / 10
+      : null,
+    averageNetScore: trainingSessions.length
+      ? trainingSessions.reduce(
+          (total, session) => total + Number(session.net_score ?? 0),
+          0,
+        ) / trainingSessions.length
+      : null,
+    normalizedNetScorePer100: normalizeNetScoreTo100(
+      netScore,
+      answeredAttempts.length,
+    ),
+    failedAtLeastTwice: countFailedAtLeastTwice(attempts),
+    unseenQuestions,
+    bookmarkedQuestions: bookmarksResult.count ?? 0,
+    currentStreakDays: computeStudyStreak(attemptDates),
+    activityLast7Days: countActivitySince(attemptDates, 7),
+    activityLast30Days: countActivitySince(attemptDates, 30),
+    mostFailedTopics,
+    performanceTrend: buildPerformanceTrend(sessions),
+    topicPerformance,
   };
 }
 
@@ -372,21 +532,33 @@ export async function getTopicSummaries(
 
 export async function getRecentSessions(
   userId: string,
-): Promise<LatestSession[]> {
+  options?: { page?: number; pageSize?: number },
+): Promise<{ sessions: LatestSession[]; total: number; page: number; pageSize: number }> {
   const supabase = createServerSupabaseClient();
-  const { data, error } = await supabase
+  const pageSize = options?.pageSize ?? 20;
+  const page = Math.max(1, options?.page ?? 1);
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await supabase
     .from("test_sessions")
     .select(
       "id, mode, title, completed_at, total_questions, correct_count, wrong_count, blank_count, net_score",
+      { count: "exact" },
     )
     .eq("user_id", userId)
     .not("completed_at", "is", null)
     .order("completed_at", { ascending: false, nullsFirst: false })
-    .limit(20);
+    .range(from, to);
 
   if (error) {
-    return [];
+    return { sessions: [], total: 0, page, pageSize };
   }
 
-  return (data ?? []).map(mapSessionRow);
+  return {
+    sessions: (data ?? []).map(mapSessionRow),
+    total: count ?? 0,
+    page,
+    pageSize,
+  };
 }

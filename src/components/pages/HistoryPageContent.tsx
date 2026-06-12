@@ -7,15 +7,24 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useI18n, useLocaleDateFormatter } from "@/lib/i18n/useI18n";
 import { formatScore } from "@/lib/stats/formatScore";
-import type { getRecentSessions } from "@/lib/studyMetrics";
+import type { LatestSession } from "@/lib/studyMetrics";
 
 type HistoryPageContentProps = {
-  sessions: Awaited<ReturnType<typeof getRecentSessions>>;
+  sessions: LatestSession[];
+  page: number;
+  pageSize: number;
+  total: number;
 };
 
-export function HistoryPageContent({ sessions }: HistoryPageContentProps) {
+export function HistoryPageContent({
+  sessions,
+  page,
+  pageSize,
+  total,
+}: HistoryPageContentProps) {
   const { t } = useI18n();
   const formatDate = useLocaleDateFormatter();
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
     <PageContainer>
@@ -23,52 +32,83 @@ export function HistoryPageContent({ sessions }: HistoryPageContentProps) {
         eyebrow={t("history.eyebrow")}
         title={t("history.title")}
         description={t("history.description")}
+        actions={
+          <Button href="/export" variant="secondary">
+            {t("export.openExport")}
+          </Button>
+        }
       />
 
       {sessions.length ? (
-        <section className="grid gap-3">
-          {sessions.map((session) => (
-            <Card key={session.id} as="article">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h2 className="font-semibold text-text-primary">
-                    {session.title ??
-                      t("history.questionSession", {
-                        count: session.totalQuestions,
-                      })}
-                  </h2>
-                  <p className="mt-1 text-sm text-text-muted">
-                    {session.completedAt
-                      ? formatDate(session.completedAt)
-                      : t("history.inProgress")}
-                  </p>
-                  <p className="mt-1 text-xs uppercase tracking-wide text-text-muted">
-                    {t("history.mode", { mode: session.mode })}
+        <>
+          <section className="grid gap-3">
+            {sessions.map((session) => (
+              <Card key={session.id} as="article">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="font-semibold text-text-primary">
+                      {session.title ??
+                        t("history.questionSession", {
+                          count: session.totalQuestions,
+                        })}
+                    </h2>
+                    <p className="mt-1 text-sm text-text-muted">
+                      {session.completedAt
+                        ? formatDate(session.completedAt)
+                        : t("history.inProgress")}
+                    </p>
+                    <p className="mt-1 text-xs uppercase tracking-wide text-text-muted">
+                      {t("history.mode", { mode: session.mode })}
+                    </p>
+                  </div>
+                  <p className="text-lg font-semibold text-text-primary">
+                    {t("history.netScore", {
+                      score: formatScore(session.netScore),
+                    })}
                   </p>
                 </div>
-                <p className="text-lg font-semibold text-text-primary">
-                  {t("history.netScore", {
-                    score: formatScore(session.netScore),
+                <p className="mt-3 text-sm text-text-secondary">
+                  {t("history.sessionSummary", {
+                    correct: session.correctCount,
+                    wrong: session.wrongCount,
+                    blank: session.blankCount,
                   })}
                 </p>
-              </div>
-              <p className="mt-3 text-sm text-text-secondary">
-                {t("history.sessionSummary", {
-                  correct: session.correctCount,
-                  wrong: session.wrongCount,
-                  blank: session.blankCount,
-                })}
-              </p>
+                <Button
+                  href={`/test/session/${session.id}`}
+                  variant="secondary"
+                  className="mt-4"
+                >
+                  {t("history.viewResults")}
+                </Button>
+              </Card>
+            ))}
+          </section>
+
+          <div className="mt-6 flex items-center justify-between gap-3">
+            <p className="text-sm text-text-muted">
+              {t("history.pagination", { page, totalPages, total })}
+            </p>
+            <div className="flex gap-2">
               <Button
-                href={`/test/session/${session.id}`}
+                href={page > 1 ? `/history?page=${page - 1}` : undefined}
                 variant="secondary"
-                className="mt-4"
+                disabled={page <= 1}
               >
-                {t("history.viewResults")}
+                {t("history.previousPage")}
               </Button>
-            </Card>
-          ))}
-        </section>
+              <Button
+                href={
+                  page < totalPages ? `/history?page=${page + 1}` : undefined
+                }
+                variant="secondary"
+                disabled={page >= totalPages}
+              >
+                {t("history.nextPage")}
+              </Button>
+            </div>
+          </div>
+        </>
       ) : (
         <EmptyState
           title={t("history.empty")}

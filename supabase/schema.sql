@@ -21,9 +21,13 @@ create table if not exists questions (
   topic text,
   year text,
   exam text,
+  is_active boolean not null default true,
   created_at timestamptz not null default now(),
   unique (source_id, external_id)
 );
+
+create index if not exists questions_topic_idx on questions (topic);
+create index if not exists questions_is_active_idx on questions (is_active);
 
 create table if not exists answers (
   id uuid primary key default gen_random_uuid(),
@@ -81,6 +85,9 @@ create table if not exists test_sessions (
   blank_count integer not null default 0,
   net_score numeric not null default 0,
   draft_state jsonb,
+  duration_seconds integer,
+  time_limit_seconds integer,
+  metadata jsonb,
   started_at timestamptz not null default now(),
   completed_at timestamptz,
   created_at timestamptz not null default now()
@@ -107,6 +114,10 @@ create index if not exists test_sessions_completed_at_idx on test_sessions (comp
 create index if not exists attempts_session_id_idx on attempts (session_id);
 create index if not exists attempts_user_id_idx on attempts (user_id);
 create index if not exists attempts_question_id_idx on attempts (question_id);
+create index if not exists attempts_user_question_idx on attempts (user_id, question_id);
+create index if not exists attempts_user_created_at_idx on attempts (user_id, created_at desc);
+create index if not exists test_sessions_user_completed_at_idx
+  on test_sessions (user_id, completed_at desc);
 
 create table if not exists question_bookmarks (
   id uuid primary key default gen_random_uuid(),
@@ -132,7 +143,37 @@ create table if not exists question_notes (
 create index if not exists question_notes_user_id_idx
   on question_notes (user_id);
 
--- Returns questions that have at least one correct answer, in random order.
+create table if not exists session_questions (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references test_sessions(id) on delete cascade,
+  question_id uuid not null references questions(id) on delete cascade,
+  position integer not null,
+  selection_reason text,
+  metadata jsonb,
+  unique (session_id, question_id),
+  unique (session_id, position)
+);
+
+create index if not exists session_questions_session_id_idx
+  on session_questions (session_id);
+
+create table if not exists question_quality_flags (
+  id uuid primary key default gen_random_uuid(),
+  question_id uuid not null references questions(id) on delete cascade,
+  flag_type text not null,
+  severity text,
+  details jsonb,
+  reviewed boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique (question_id, flag_type)
+);
+
+create index if not exists question_quality_flags_flag_type_idx
+  on question_quality_flags (flag_type);
+create index if not exists question_quality_flags_reviewed_idx
+  on question_quality_flags (reviewed);
+
+-- Returns active questions that have at least one correct answer, in random order.
 create or replace function public.get_random_questions(question_limit integer)
 returns table (
   id uuid,
@@ -159,7 +200,8 @@ as $$
     q.exam,
     q.created_at
   from questions q
-  where exists (
+  where coalesce(q.is_active, true) = true
+    and exists (
     select 1
     from answers a
     where a.question_id = q.id
@@ -178,6 +220,8 @@ alter table public.test_sessions disable row level security;
 alter table public.attempts disable row level security;
 alter table public.question_bookmarks disable row level security;
 alter table public.question_notes disable row level security;
+alter table public.session_questions disable row level security;
+alter table public.question_quality_flags disable row level security;
 
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on public.sources to anon, authenticated;
@@ -188,5 +232,7 @@ grant select, insert, update, delete on public.test_sessions to anon, authentica
 grant select, insert, update, delete on public.attempts to anon, authenticated;
 grant select, insert, update, delete on public.question_bookmarks to anon, authenticated;
 grant select, insert, update, delete on public.question_notes to anon, authenticated;
+grant select, insert, update, delete on public.session_questions to anon, authenticated;
+grant select, insert, update, delete on public.question_quality_flags to anon, authenticated;
 grant execute on function public.get_random_questions(integer) to anon, authenticated;
 grant execute on function public.ensure_default_user() to anon, authenticated;

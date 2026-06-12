@@ -1,5 +1,6 @@
 "use server";
 
+import { requireAdminFromCookie } from "@/app/actions/admin";
 import { getDatabaseStats, type DatabaseStats } from "@/lib/databaseStats";
 import {
   importDiscoveredTest,
@@ -10,6 +11,7 @@ import {
 export async function importDiscoveredPreparaticTest(
   input: BulkImportTestInput,
 ): Promise<BulkImportTestLog> {
+  await requireAdminFromCookie();
   return importDiscoveredTest(input);
 }
 

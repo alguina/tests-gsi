@@ -8,6 +8,7 @@ import {
   saveTestDraftAction,
   startFailedQuestionsTest,
   startRandomTest,
+  startRecommendedTest,
   startTopicTest,
   submitTest,
 } from "@/app/actions/test";
@@ -41,7 +42,7 @@ type TestPhase = "setup" | "taking" | "results";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export type TestAutoStart = {
-  mode: "random" | "failed" | "topic";
+  mode: "random" | "failed" | "topic" | "recommended";
   count: number | "all";
   topic?: string;
   filter?: TopicQuestionFilter;
@@ -142,6 +143,7 @@ export function TestPageContent({
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [isOffline, setIsOffline] = useState(false);
   const [reviewUnansweredMode, setReviewUnansweredMode] = useState(false);
   const [unansweredNotice, setUnansweredNotice] = useState<string | null>(null);
   const [activeSession, setActiveSession] = useState<InProgressSession | null>(
@@ -205,6 +207,13 @@ export function TestPageContent({
 
         if (config.mode === "failed") {
           started = await startFailedQuestionsTest(config.count, profileId);
+        } else if (config.mode === "recommended") {
+          if (typeof config.count !== "number") {
+            setLoadError(mapTestErrorCode("INVALID_QUESTION_COUNT", t));
+            return;
+          }
+
+          started = await startRecommendedTest(config.count, profileId);
         } else if (config.mode === "topic" && config.topic) {
           started = await startTopicTest(
             config.topic,
@@ -334,6 +343,21 @@ export function TestPageContent({
     autoStartRef.current = true;
     void requestStart(autoStart);
   }, [autoStart, requestStart, resumeSessionId]);
+
+  useEffect(() => {
+    function updateOnlineStatus() {
+      setIsOffline(typeof navigator !== "undefined" && !navigator.onLine);
+    }
+
+    updateOnlineStatus();
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
+
+    return () => {
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
+    };
+  }, []);
 
   useEffect(() => {
     if (phase !== "taking" || !sessionId || !questions.length) {
@@ -502,7 +526,7 @@ export function TestPageContent({
   }
 
   async function handleSubmit() {
-    if (!questions.length || !sessionId) {
+    if (isSubmitting || !questions.length || !sessionId) {
       return;
     }
 
@@ -675,6 +699,12 @@ export function TestPageContent({
                 <span className="text-xs text-red-600">{t("test.saveFailed")}</span>
               ) : null}
             </div>
+
+            {isOffline ? (
+              <p className="mt-2 text-sm text-warning" role="status">
+                {t("test.offlineWarning")}
+              </p>
+            ) : null}
 
             {sessionMode !== "random" ? (
               <p className="mt-2 text-xs font-medium uppercase tracking-wide text-text-muted">

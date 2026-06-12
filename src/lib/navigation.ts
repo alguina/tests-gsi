@@ -13,10 +13,11 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", labelKey: "nav.dashboard" },
   { href: "/review-topics", labelKey: "nav.reviewTopics" },
   { href: "/history", labelKey: "nav.history" },
+  { href: "/export", labelKey: "nav.export" },
   {
     href: "/import",
     labelKey: "nav.import",
-    matchPaths: ["/discover", "/saved"],
+    matchPaths: ["/discover", "/saved", "/admin"],
   },
 ];
 

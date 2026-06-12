@@ -22,6 +22,7 @@ export function toActionError(error: unknown): ActionResult<never> {
       message === "SESSION_DRAFT_MISSING" ||
       message === "SESSION_NOT_FOUND" ||
       message === "SESSION_ALREADY_COMPLETED" ||
+      message === "ADMIN_ACCESS_DENIED" ||
       message === "EMPTY_TEST" ||
       message === "MISSING_SUPABASE_CONFIG" ||
       message.startsWith("INSUFFICIENT_QUESTIONS:")

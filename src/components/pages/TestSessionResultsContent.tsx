@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -9,10 +10,12 @@ import type { TestResult } from "@/lib/testSession";
 
 type TestSessionResultsContentProps = {
   result: TestResult;
+  examResults?: ReactNode;
 };
 
 export function TestSessionResultsContent({
   result,
+  examResults,
 }: TestSessionResultsContentProps) {
   const { t } = useI18n();
 
@@ -28,7 +31,9 @@ export function TestSessionResultsContent({
           </Button>
         }
       />
-      <TestResultsContent result={result} showSessionMeta={false} />
+      {examResults ?? (
+        <TestResultsContent result={result} showSessionMeta={false} />
+      )}
     </PageContainer>
   );
 }
