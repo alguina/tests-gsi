@@ -53,15 +53,15 @@ export function ChooseProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="choose-profile-title"
     >
-      <div className="mx-4 w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-2xl">
+      <div className="mx-4 w-full max-w-sm rounded-lg border border-border bg-surface p-8 shadow-[0_12px_40px_rgb(26_26_26_/_0.12)]">
         <h1
           id="choose-profile-title"
-          className="text-xl font-semibold text-text-primary"
+          className="text-xl font-medium tracking-tight text-text-primary"
         >
           {t("profile.chooseTitle")}
         </h1>
@@ -86,7 +86,7 @@ export function ChooseProfileModal({
               disabled={isLoading}
             />
             {error && (
-              <p className="text-sm text-red-600" role="alert">
+              <p className="text-sm text-danger" role="alert">
                 {error}
               </p>
             )}

@@ -69,7 +69,7 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
 
       {stats.inProgressSession ? (
         <Card tone="warning" as="section">
-          <h2 className="text-lg font-semibold text-text-primary">
+          <h2 className="text-base font-medium tracking-tight text-text-primary">
             {t("test.testInProgress")}
           </h2>
           <p className="mt-2 text-sm text-text-secondary">
@@ -170,7 +170,7 @@ function RecommendedCard({
       <p className="text-sm font-medium uppercase tracking-wide text-text-muted">
         {t("home.recommendedToday")}
       </p>
-      <h2 className="mt-2 text-xl font-semibold text-text-primary">
+      <h2 className="mt-2 text-base font-medium tracking-tight text-text-primary">
         {hasAttempts
           ? t("home.recommendedSummary", { count: suggestedCount })
           : t("home.startWithRandomTest")}
@@ -182,7 +182,7 @@ function RecommendedCard({
       </p>
       {hasAttempts && recommendation ? (
         <>
-          <div className="mt-4 space-y-2 rounded-xl bg-surface-muted p-3 text-sm text-text-primary">
+          <div className="mt-4 space-y-2 rounded-md bg-surface-muted p-3 text-sm text-text-primary">
             {!topicPreview.hasPoorLabels && topicPreview.visible.length ? (
               <p>
                 {t("home.focus", {
@@ -221,7 +221,7 @@ function ProgressLinksCard() {
       <p className="text-sm font-medium uppercase tracking-wide text-text-muted">
         {t("nav.progress")}
       </p>
-      <h2 className="mt-2 text-xl font-semibold text-text-primary">
+      <h2 className="mt-2 text-base font-medium tracking-tight text-text-primary">
         {t("home.progressLinksTitle")}
       </h2>
       <p className="mt-2 text-sm leading-6 text-text-secondary">

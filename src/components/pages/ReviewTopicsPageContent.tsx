@@ -137,7 +137,7 @@ export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps
 
           {activeTopic ? (
             <Card as="section">
-              <h2 className="text-lg font-semibold text-text-primary">
+              <h2 className="text-base font-medium tracking-tight text-text-primary">
                 {t("topics.trainTopic")}
               </h2>
               <p className="mt-2 text-sm text-text-secondary">

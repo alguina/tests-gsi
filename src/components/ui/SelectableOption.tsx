@@ -1,15 +1,28 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/ui/cn";
+import { interactive, radius, spacing } from "@/lib/ui/tokens";
+
+export type SelectableOptionSize = "sm" | "md" | "lg";
 
 type SelectableOptionProps = {
   selected: boolean;
   children: ReactNode;
+  size?: SelectableOptionSize;
+  align?: "center" | "left";
   className?: string;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
+
+const sizeClasses: Record<SelectableOptionSize, string> = {
+  sm: "min-h-9 px-3 py-2 text-xs",
+  md: cn(spacing.pillMinHeight, "px-3 py-2.5 text-sm"),
+  lg: "min-h-14 px-4 py-3.5 text-sm leading-relaxed",
+};
 
 export function SelectableOption({
   selected,
   children,
+  size = "md",
+  align = "center",
   className,
   type = "button",
   ...props
@@ -18,11 +31,11 @@ export function SelectableOption({
     <button
       type={type}
       className={cn(
-        "w-full rounded-xl border text-center text-sm font-semibold text-text-primary transition",
-        selected
-          ? "border-selection-from bg-selection"
-          : "border-border bg-surface-muted hover:border-selection-from/50 hover:bg-zinc-100",
-        "disabled:cursor-not-allowed disabled:opacity-60",
+        interactive.optionBase,
+        radius.md,
+        sizeClasses[size],
+        align === "left" ? "text-left" : "text-center",
+        selected ? interactive.optionSelected : interactive.optionDefault,
         className,
       )}
       {...props}

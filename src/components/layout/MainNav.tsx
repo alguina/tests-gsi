@@ -13,17 +13,17 @@ import {
   PRIMARY_NAV_SECTIONS,
   type NavSection,
 } from "@/lib/navigation";
-import { layout } from "@/lib/ui/tokens";
+import { controlStyles, layout, radius, typography } from "@/lib/ui/tokens";
 
 function MenuIcon({ open }: { open: boolean }) {
   return (
     <svg
       aria-hidden="true"
       viewBox="0 0 24 24"
-      className="h-5 w-5"
+      className="h-4 w-4"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
     >
       {open ? (
@@ -59,16 +59,24 @@ function NavLink({
     <Link
       href={item.href}
       className={cn(
-        "text-sm font-medium transition",
+        typography.navLink,
+        "transition",
         isActive
-          ? "text-selection-from underline decoration-selection-from decoration-2 underline-offset-[6px]"
-          : "text-text-secondary hover:text-selection-from",
+          ? "text-text-primary"
+          : "text-text-muted hover:text-text-secondary",
         className,
       )}
       onClick={onNavigate}
       aria-current={isActive ? "page" : undefined}
     >
-      {label}
+      <span
+        className={cn(
+          "inline-block border-b-2 pb-0.5 transition",
+          isActive ? "border-accent" : "border-transparent",
+        )}
+      >
+        {label}
+      </span>
     </Link>
   );
 }
@@ -84,7 +92,7 @@ function ProfileControl({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <span
-        className="max-w-[10rem] truncate text-sm font-medium text-text-primary"
+        className={cn("max-w-[10rem] truncate", typography.meta, "text-text-secondary")}
         title={profile.name}
       >
         {profile.name}
@@ -92,7 +100,11 @@ function ProfileControl({ className }: { className?: string }) {
       <button
         type="button"
         onClick={clearProfile}
-        className="shrink-0 text-xs text-text-secondary underline decoration-text-secondary/50 underline-offset-2 transition hover:text-selection-from"
+        className={cn(
+          typography.meta,
+          "text-text-muted underline decoration-border underline-offset-2 transition hover:text-text-secondary",
+          controlStyles.focusRing,
+        )}
       >
         {t("profile.changeProfile")}
       </button>
@@ -107,10 +119,6 @@ export function MainNav() {
   const [openedAtPath, setOpenedAtPath] = useState<string | null>(null);
   const isMenuOpen = openedAtPath === pathname && openedAtPath !== null;
 
-  function openMenu() {
-    setOpenedAtPath(pathname);
-  }
-
   function closeMenu() {
     setOpenedAtPath(null);
   }
@@ -119,7 +127,7 @@ export function MainNav() {
     if (isMenuOpen) {
       closeMenu();
     } else {
-      openMenu();
+      setOpenedAtPath(pathname);
     }
   }
 
@@ -142,22 +150,25 @@ export function MainNav() {
     <header
       className={cn(
         layout.navHeight,
-        "border-b border-border bg-surface/95 backdrop-blur",
+        "border-b border-border-subtle bg-background/90 backdrop-blur-sm",
       )}
     >
       <nav
         className={cn(
-          "mx-auto w-full py-3",
+          "mx-auto w-full py-4",
           layout.contentMaxWidth,
           layout.pagePaddingX,
-          "lg:flex lg:items-center lg:justify-between lg:gap-4",
+          "lg:flex lg:items-center lg:justify-between lg:gap-6",
         )}
         aria-label={t("nav.openMenu")}
       >
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-4">
           <Link
             href="/"
-            className="min-w-0 truncate text-base font-semibold text-text-primary"
+            className={cn(
+              typography.navLink,
+              "min-w-0 truncate font-medium tracking-tight text-text-primary",
+            )}
           >
             {t(APP_TITLE_KEY)}
           </Link>
@@ -166,7 +177,11 @@ export function MainNav() {
             <LanguageSelector />
             <button
               type="button"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-surface text-text-primary transition hover:bg-surface-muted"
+              className={cn(
+                "inline-flex h-9 w-9 items-center justify-center border border-border bg-surface text-text-primary transition hover:bg-surface-muted",
+                radius.md,
+                controlStyles.focusRing,
+              )}
               aria-expanded={isMenuOpen}
               aria-controls="mobile-main-nav"
               aria-label={isMenuOpen ? t("nav.closeMenu") : t("nav.openMenu")}
@@ -185,37 +200,36 @@ export function MainNav() {
           )}
         >
           <div className="min-h-0 overflow-hidden">
-            <div className="flex flex-col gap-1 border-t border-border pb-1 pt-2">
+            <div className="flex flex-col gap-1 border-t border-border-subtle pb-1 pt-3">
               {PRIMARY_NAV_SECTIONS.map((item) => (
                 <NavLink
                   key={item.href}
                   item={item}
                   isActive={isNavSectionActive(pathname, item)}
                   label={t(item.labelKey)}
-                  className="px-3 py-3"
+                  className="px-1 py-3"
                   onNavigate={closeMenu}
                 />
               ))}
-              <div className="border-t border-border px-3 pt-3 pb-2">
+              <div className="border-t border-border-subtle px-1 pt-3 pb-2">
                 <ProfileControl />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="hidden items-center gap-6 lg:flex">
-          <div className="flex flex-wrap items-center gap-5">
+        <div className="hidden items-center gap-8 lg:flex">
+          <div className="flex flex-wrap items-center gap-6">
             {PRIMARY_NAV_SECTIONS.map((item) => (
               <NavLink
                 key={item.href}
                 item={item}
                 isActive={isNavSectionActive(pathname, item)}
                 label={t(item.labelKey)}
-                className="whitespace-nowrap py-1"
               />
             ))}
           </div>
-          <ProfileControl className="border-l border-border pl-4" />
+          <ProfileControl className="border-l border-border-subtle pl-6" />
           <LanguageSelector />
         </div>
       </nav>

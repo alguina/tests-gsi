@@ -1,5 +1,6 @@
 import type { HTMLAttributes, TableHTMLAttributes } from "react";
 import { cn } from "@/lib/ui/cn";
+import { typography } from "@/lib/ui/tokens";
 
 type TableWrapProps = HTMLAttributes<HTMLDivElement>;
 
@@ -33,10 +34,7 @@ export function TableHead({
 }: TableSectionProps) {
   return (
     <thead
-      className={cn(
-        "border-b border-border text-xs uppercase tracking-wide text-text-muted",
-        className,
-      )}
+      className={cn("border-b border-border-subtle", className)}
       {...props}
     >
       {children}
@@ -60,7 +58,10 @@ type TableRowProps = HTMLAttributes<HTMLTableRowElement>;
 
 export function TableRow({ className, children, ...props }: TableRowProps) {
   return (
-    <tr className={cn("border-b border-zinc-100", className)} {...props}>
+    <tr
+      className={cn("border-b border-border-subtle/80 last:border-b-0", className)}
+      {...props}
+    >
       {children}
     </tr>
   );
@@ -81,8 +82,10 @@ export function TableCell({
   return (
     <Component
       className={cn(
-        "px-3 py-2",
-        header ? "font-medium" : "py-3",
+        "px-3",
+        header
+          ? cn(typography.statLabel, "py-3 text-left align-bottom")
+          : "py-3.5 align-top text-text-primary",
         className,
       )}
       {...props}

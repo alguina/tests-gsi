@@ -76,7 +76,7 @@ export function HomeTrainingMenu({
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center rounded-xl px-3 py-3 text-left text-sm font-medium text-text-primary transition hover:bg-surface-muted"
+              className="flex w-full items-center rounded-md px-3 py-2.5 text-left text-sm text-text-primary transition hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent"
               onClick={() => handleSelect(option.href)}
             >
               {t(option.labelKey)}

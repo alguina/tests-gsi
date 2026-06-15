@@ -126,6 +126,14 @@ export function DashboardPageContent({ metrics }: DashboardPageContentProps) {
               : formatScore(metrics.averageNetScore)
           }
         />
+        <StatCard
+          label={t("dashboard.averageGradeOver100")}
+          value={
+            metrics.averageNormalizedNetScorePer100 === null
+              ? t("common.dash")
+              : formatScore(metrics.averageNormalizedNetScorePer100)
+          }
+        />
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -170,7 +178,7 @@ export function DashboardPageContent({ metrics }: DashboardPageContentProps) {
         <Card as="article">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-text-primary">
+              <h2 className="text-base font-medium tracking-tight text-text-primary">
                 {t("dashboard.performanceOverTime")}
               </h2>
               <p className="mt-1 text-sm text-text-secondary">
@@ -222,7 +230,7 @@ export function DashboardPageContent({ metrics }: DashboardPageContentProps) {
         </Card>
 
         <Card as="article">
-          <h2 className="text-lg font-semibold text-text-primary">
+          <h2 className="text-base font-medium tracking-tight text-text-primary">
             {t("dashboard.mostFailedTopics")}
           </h2>
           {metrics.mostFailedTopics.length ? (
@@ -230,7 +238,7 @@ export function DashboardPageContent({ metrics }: DashboardPageContentProps) {
               {metrics.mostFailedTopics.map((item) => (
                 <li
                   key={item.topic}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-surface-muted px-3 py-2"
+                  className="flex items-center justify-between gap-3 rounded-md bg-surface-muted px-3 py-2"
                 >
                   <Link
                     href={`/test?mode=topic&topic=${encodeURIComponent(item.topic)}&count=25&filter=failed`}
@@ -253,7 +261,7 @@ export function DashboardPageContent({ metrics }: DashboardPageContentProps) {
       </section>
 
       <Card as="section">
-        <h2 className="text-lg font-semibold text-text-primary">
+        <h2 className="text-base font-medium tracking-tight text-text-primary">
           {t("dashboard.topicPerformance")}
         </h2>
         {metrics.topicPerformance.length ? (

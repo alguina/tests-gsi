@@ -36,7 +36,7 @@ import {
   type TestResult,
 } from "@/lib/testSession";
 import { cn } from "@/lib/ui/cn";
-import { layout } from "@/lib/ui/tokens";
+import { layout, typography } from "@/lib/ui/tokens";
 
 type TestPhase = "setup" | "taking" | "results";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
@@ -581,21 +581,17 @@ export function TestPageContent({
   return (
     <PageContainer innerClassName="gap-4 pb-28">
       <PageHeader
+        backLink={{ href: "/train", label: t("test.backToTrain") }}
         eyebrow={t("test.eyebrow")}
         title={t("test.title")}
         description={t("test.description")}
-        meta={
-          <Button href="/train" variant="link" className="px-0">
-            {t("test.backToTakeTest")}
-          </Button>
-        }
       />
 
       {phase === "setup" ? (
         <>
           {activeSession ? (
             <Card tone="warning" padding="sm" className="shadow-none">
-              <h2 className="text-lg font-semibold text-text-primary">
+              <h2 className="text-base font-medium tracking-tight text-text-primary">
                 {t("test.testInProgress")}
               </h2>
               <p className="mt-2 text-sm text-text-secondary">
@@ -625,7 +621,7 @@ export function TestPageContent({
           ) : null}
 
           <Card>
-            <h2 className="text-lg font-semibold text-text-primary">
+            <h2 className="text-base font-medium tracking-tight text-text-primary">
               {t("test.numberOfQuestions")}
             </h2>
             <p className="mt-1 text-sm text-text-secondary">
@@ -639,7 +635,6 @@ export function TestPageContent({
                   selected={selectedCount === count}
                   onClick={() => setSelectedCount(count)}
                   disabled={isLoading}
-                  className="px-4 py-4 text-base"
                 >
                   {t("test.questionsCount", { count })}
                 </SelectableOption>
@@ -696,7 +691,7 @@ export function TestPageContent({
                 <span className="text-xs text-text-muted">{t("test.saved")}</span>
               ) : null}
               {saveStatus === "error" ? (
-                <span className="text-xs text-red-600">{t("test.saveFailed")}</span>
+                <span className="text-xs text-danger">{t("test.saveFailed")}</span>
               ) : null}
             </div>
 
@@ -738,16 +733,16 @@ export function TestPageContent({
               </Card>
             ) : null}
 
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-muted">
+            <div className="mt-4 h-1 overflow-hidden rounded-full bg-surface-muted">
               <div
-                className="h-full rounded-full bg-primary transition-all"
+                className="h-full rounded-full bg-accent transition-all"
                 style={{
                   width: `${((currentIndex + 1) / questions.length) * 100}%`,
                 }}
               />
             </div>
 
-            <h2 className="mt-5 text-lg font-semibold leading-7 text-text-primary">
+            <h2 className={cn("mt-6", typography.question)}>
               {currentQuestion.text}
             </h2>
 
@@ -759,7 +754,7 @@ export function TestPageContent({
               </Card>
             ) : null}
 
-            <ul className="mt-5 space-y-3">
+            <ul className="mt-6 space-y-2.5">
               {currentQuestion.answers.map((answer) => {
                 const isSelected =
                   responses[currentQuestion.id] === answer.letter;
@@ -768,10 +763,14 @@ export function TestPageContent({
                   <li key={answer.letter}>
                     <SelectableOption
                       selected={isSelected}
+                      size="lg"
+                      align="left"
                       onClick={() => handleSelectAnswer(answer.letter)}
-                      className="p-4 text-left text-sm leading-6 font-normal"
+                      className="font-normal"
                     >
-                      <span className="font-semibold">{answer.letter}.</span>{" "}
+                      <span className="mr-2 font-medium text-text-muted">
+                        {answer.letter}
+                      </span>
                       {answer.text}
                     </SelectableOption>
                   </li>
@@ -821,7 +820,7 @@ export function TestPageContent({
             </Card>
           ) : null}
 
-          <nav className="fixed inset-x-0 bottom-0 border-t border-border bg-surface/95 px-4 py-3 backdrop-blur sm:px-6">
+          <nav className="fixed inset-x-0 bottom-0 border-t border-border-subtle bg-background/90 px-4 py-3 backdrop-blur-sm sm:px-6">
             <div
               className={cn(
                 "mx-auto flex w-full gap-3",

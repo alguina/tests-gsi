@@ -162,10 +162,10 @@ export function DataQualityPageContent({ gate }: DataQualityPageContentProps) {
 
       {issueCountEntries.length ? (
         <Card as="section" className="mt-6">
-          <h2 className="text-lg font-semibold">{t("quality.issueSummary")}</h2>
+          <h2 className="text-base font-medium tracking-tight text-text-primary">{t("quality.issueSummary")}</h2>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {issueCountEntries.map(([type, count]) => (
-              <li key={type} className="rounded-xl bg-surface-muted px-3 py-2 text-sm">
+              <li key={type} className="rounded-md bg-surface-muted px-3 py-2 text-sm">
                 <span className="font-medium">{t(`quality.flag.${type}`)}</span>
                 <span className="float-right font-semibold">{count}</span>
               </li>

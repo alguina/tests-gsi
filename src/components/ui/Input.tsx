@@ -12,7 +12,10 @@ export function FieldLabel({ htmlFor, children, className }: FieldLabelProps) {
   return (
     <label
       htmlFor={htmlFor}
-      className={cn("block text-sm font-medium text-text-primary", className)}
+      className={cn(
+        "block text-sm font-medium text-text-primary",
+        className,
+      )}
     >
       {children}
     </label>

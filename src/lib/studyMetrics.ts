@@ -65,6 +65,7 @@ export type DashboardStudyMetrics = {
   globalAccuracy: number | null;
   averageNetScore: number | null;
   normalizedNetScorePer100: number | null;
+  averageNormalizedNetScorePer100: number | null;
   failedAtLeastTwice: number;
   unseenQuestions: number;
   bookmarkedQuestions: number;
@@ -350,6 +351,20 @@ export async function getDashboardStudyMetrics(
   const trainingSessions = sessions.filter(
     (session) => session.mode !== TEST_MODE_EXAM,
   );
+  const normalizedSessionGrades = trainingSessions
+    .map((session) => {
+      const answered =
+        Number(session.correct_count ?? 0) + Number(session.wrong_count ?? 0);
+      return normalizeNetScoreTo100(Number(session.net_score ?? 0), answered);
+    })
+    .filter((value): value is number => value !== null);
+  const averageNormalizedNetScorePer100 = normalizedSessionGrades.length
+    ? Math.round(
+        (normalizedSessionGrades.reduce((total, value) => total + value, 0) /
+          normalizedSessionGrades.length) *
+          100,
+      ) / 100
+    : null;
   const netScore = computeNetScore(correctTotal, wrongTotal);
   const attemptDates = attempts.map((attempt) => attempt.answered_at as string);
 
@@ -388,6 +403,7 @@ export async function getDashboardStudyMetrics(
       netScore,
       answeredAttempts.length,
     ),
+    averageNormalizedNetScorePer100,
     failedAtLeastTwice: countFailedAtLeastTwice(attempts),
     unseenQuestions,
     bookmarkedQuestions: bookmarksResult.count ?? 0,

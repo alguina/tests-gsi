@@ -178,6 +178,7 @@ export const es: Dictionary = {
   "dashboard.wrongTotal": "Fallos",
   "dashboard.blankTotal": "En blanco",
   "dashboard.normalizedPer100": "Nota neta por 100 preguntas",
+  "dashboard.averageGradeOver100": "Nota media transformada sobre 100",
   "dashboard.failedTwice": "Falladas al menos dos veces",
   "dashboard.unseenQuestions": "Preguntas sin ver",
   "dashboard.bookmarkedQuestions": "Preguntas marcadas",
@@ -423,6 +424,7 @@ export const es: Dictionary = {
   "test.description":
     "Responde preguntas aleatorias de tu banco de preguntas guardado, una a una.",
   "test.backToTakeTest": "Volver a Hacer test",
+  "test.backToTrain": "Volver a Entrenar",
   "test.backToHistory": "Volver al Historial",
   "test.chooseSize": "Elige el tamaño del test",
   "test.chooseSizeDescription":

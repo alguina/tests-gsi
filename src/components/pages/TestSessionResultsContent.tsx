@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Button } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TestResultsContent } from "@/components/pages/TestResultsContent";
 import { useI18n } from "@/lib/i18n/useI18n";
@@ -22,14 +21,10 @@ export function TestSessionResultsContent({
   return (
     <PageContainer>
       <PageHeader
+        backLink={{ href: "/history", label: t("test.backToHistory") }}
         eyebrow={t("test.eyebrow")}
         title={result.title ?? t("test.results")}
         description={t("test.modeLabel", { mode: result.mode })}
-        meta={
-          <Button href="/history" variant="link" className="px-0">
-            {t("test.backToHistory")}
-          </Button>
-        }
       />
       {examResults ?? (
         <TestResultsContent result={result} showSessionMeta={false} />

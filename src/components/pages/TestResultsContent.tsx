@@ -7,12 +7,15 @@ import {
   toggleBookmarkAction,
 } from "@/app/actions/test";
 import { useProfile } from "@/components/profile/ProfileProvider";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { SelectableOption } from "@/components/ui/SelectableOption";
 import { StatCard } from "@/components/ui/StatCard";
 import { useI18n } from "@/lib/i18n/useI18n";
+import { cn } from "@/lib/ui/cn";
+import { typography } from "@/lib/ui/tokens";
 import { getAnswerTextByLetter } from "@/lib/testAnswerDisplay";
 import { formatScore } from "@/lib/stats/formatScore";
 import type { TestQuestionResult, TestResult } from "@/lib/testSession";
@@ -115,18 +118,16 @@ export function TestResultsContent({
   }
 
   return (
-    <section className="space-y-4">
-      <Card>
-        <h2 className="text-xl font-semibold text-text-primary">
-          {t("test.results")}
-        </h2>
+    <section className="space-y-6">
+      <Card variant="editorial" padding="lg">
+        <h2 className={typography.sectionTitle}>{t("test.results")}</h2>
         {showSessionMeta ? (
-          <p className="mt-1 text-sm text-text-secondary">
+          <p className={cn("mt-1", typography.meta)}>
             {t("test.sessionSaved", { sessionId: result.sessionId })}
           </p>
         ) : null}
 
-        <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           <StatCard
             label={t("test.totalQuestions")}
             value={result.questions.length}
@@ -156,11 +157,9 @@ export function TestResultsContent({
         </dl>
       </Card>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="text-lg font-semibold text-text-primary">
-            {t("test.correction")}
-          </h3>
+          <h3 className={typography.sectionTitle}>{t("test.correction")}</h3>
           <div className="flex flex-wrap gap-2">
             {(
               [
@@ -173,8 +172,9 @@ export function TestResultsContent({
               <SelectableOption
                 key={value}
                 selected={filter === value}
+                size="sm"
                 onClick={() => setFilter(value)}
-                className="px-3 py-2 text-xs"
+                className="w-auto"
               >
                 {t(labelKey)}
               </SelectableOption>
@@ -258,52 +258,55 @@ function QuestionCorrectionCard({
     t,
   );
 
+  const status = question.isBlank
+    ? { variant: "warning" as const, label: t("test.leftBlank"), accent: "border-l-warning/50" }
+    : question.isCorrect
+      ? { variant: "success" as const, label: t("test.resultCorrect"), accent: "border-l-success/50" }
+      : { variant: "danger" as const, label: t("test.resultWrong"), accent: "border-l-danger/50" };
+
   return (
     <Card
       as="article"
-      tone={
-        question.isBlank
-          ? "warning"
-          : question.isCorrect
-            ? "success"
-            : "danger"
-      }
+      variant="editorial"
+      className={cn("border-l-2", status.accent)}
     >
       <div className="flex items-start gap-3">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-semibold text-text-secondary">
-          {index + 1}
+        <span className="mt-0.5 shrink-0 text-xs font-medium tabular-nums text-text-muted">
+          {String(index + 1).padStart(2, "0")}
         </span>
-        <div className="min-w-0 flex-1 space-y-2">
-          <h4 className="font-semibold leading-6 text-text-primary">
-            {question.text}
-          </h4>
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <h4 className="text-sm font-medium leading-6 text-text-primary">
+              {question.text}
+            </h4>
+            <Badge variant={status.variant} className="shrink-0">
+              {status.label}
+            </Badge>
+          </div>
           {question.metadata ? (
-            <p className="text-sm text-text-secondary">{question.metadata}</p>
+            <p className={typography.meta}>{question.metadata}</p>
           ) : null}
-          <p className="text-sm text-text-primary">
-            <span className="font-semibold">{t("test.myAnswer")}</span>{" "}
-            {myAnswerDisplay}
-          </p>
-          <p className="text-sm text-text-primary">
-            <span className="font-semibold">{t("test.correctAnswer")}</span>{" "}
-            {correctAnswerDisplay}
-          </p>
-          <p className="text-sm font-semibold text-text-primary">
-            {question.isBlank
-              ? t("test.leftBlank")
-              : question.isCorrect
-                ? t("test.resultCorrect")
-                : t("test.resultWrong")}
-          </p>
+          <dl className="space-y-1.5 text-sm">
+            <div className="flex gap-2">
+              <dt className="shrink-0 text-text-muted">{t("test.myAnswer")}</dt>
+              <dd className="text-text-primary">{myAnswerDisplay}</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="shrink-0 text-text-muted">
+                {t("test.correctAnswer")}
+              </dt>
+              <dd className="text-text-primary">{correctAnswerDisplay}</dd>
+            </div>
+          </dl>
 
-          <div className="flex flex-wrap gap-2 pt-2">
-            <Button variant="secondary" size="sm" onClick={onToggleBookmark}>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button variant="subtle" size="sm" onClick={onToggleBookmark}>
               {bookmarked ? t("test.removeFromReview") : t("test.markForReview")}
             </Button>
           </div>
 
-          <div className="space-y-2 pt-2">
-            <p className="text-sm font-semibold text-text-primary">
+          <div className="space-y-2 pt-1">
+            <p className={typography.meta}>
               {note ? t("test.editNote") : t("test.addNote")}
             </p>
             <Input
@@ -311,7 +314,7 @@ function QuestionCorrectionCard({
               onChange={(event) => onDraftNoteChange(event.target.value)}
               placeholder={t("test.notePlaceholder")}
             />
-            <Button variant="secondary" size="sm" onClick={onSaveNote}>
+            <Button variant="subtle" size="sm" onClick={onSaveNote}>
               {t("test.saveNote")}
             </Button>
           </div>

@@ -464,16 +464,16 @@ export function ExamTestPageContent({
     <PageContainer>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium uppercase tracking-wide text-text-muted">
+          <p className="text-[0.6875rem] font-medium uppercase tracking-[0.14em] text-text-muted">
             {t("exam.eyebrow")}
           </p>
-          <h1 className="text-xl font-semibold text-text-primary">
+          <h1 className="text-2xl font-medium tracking-tight text-text-primary">
             {t("exam.simulationInProgress")}
           </h1>
         </div>
         <div
           className={cn(
-            "rounded-xl px-4 py-2 text-lg font-semibold tabular-nums",
+            "rounded-md border border-border-subtle px-4 py-2 text-lg font-medium tabular-nums",
             timeWarning === "expired" || timeWarning === "one"
               ? "bg-danger/10 text-danger"
               : timeWarning === "five"
@@ -511,20 +511,22 @@ export function ExamTestPageContent({
                   total: questions.length,
                 })}
               </p>
-              <p className="mt-4 text-base leading-7 text-text-primary">
+              <p className="mt-4 text-[1rem] font-normal leading-7 text-text-primary sm:text-[1.0625rem]">
                 {currentQuestion.text}
               </p>
-              <div className="mt-6 space-y-3">
+              <div className="mt-6 space-y-2.5">
                 {currentQuestion.answers.map((answer) => (
                   <SelectableOption
                     key={answer.id}
                     selected={responses[currentQuestion.id] === answer.letter}
+                    size="lg"
+                    align="left"
                     onClick={() => handleSelectAnswer(answer.letter)}
                   >
-                    {t("test.answerLetterAndText", {
-                      letter: answer.letter,
-                      text: answer.text,
-                    })}
+                    <span className="mr-2 font-medium text-text-muted">
+                      {answer.letter}
+                    </span>
+                    {answer.text}
                   </SelectableOption>
                 ))}
               </div>

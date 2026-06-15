@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/ui/cn";
+import { typography } from "@/lib/ui/tokens";
 
 type TrainingModePanelProps = {
   title: string;
@@ -28,12 +29,17 @@ export function TrainingModePanel({
   className,
 }: TrainingModePanelProps) {
   return (
-    <Card as="article" className={cn("flex flex-col", className)}>
-      <h2 className="text-xl font-semibold text-text-primary">{title}</h2>
-      <p className="mt-2 text-sm leading-6 text-text-secondary">{description}</p>
+    <Card
+      as="article"
+      variant="editorial"
+      padding="lg"
+      className={cn("flex flex-col", className)}
+    >
+      <h2 className={typography.panelTitle}>{title}</h2>
+      <p className={cn("mt-1.5 max-w-prose", typography.body)}>{description}</p>
 
       {emptyState ? (
-        <div className="mt-4">
+        <div className="mt-5">
           <EmptyState
             title={emptyState.title}
             description={emptyState.description}
@@ -41,18 +47,14 @@ export function TrainingModePanel({
         </div>
       ) : (
         <>
-          {children ? <div className="mt-4 space-y-3">{children}</div> : null}
+          {children ? <div className="mt-5 space-y-4">{children}</div> : null}
 
-          {controls ? (
-            <div className="mt-4 space-y-3">
-              {controls}
-            </div>
-          ) : null}
+          {controls ? <div className="mt-5 space-y-4">{controls}</div> : null}
 
-          {action ? <div className="mt-4">{action}</div> : null}
+          {action ? <div className="mt-6">{action}</div> : null}
 
           {helperText ? (
-            <p className="mt-3 text-sm text-text-muted">{helperText}</p>
+            <p className={cn("mt-3", typography.meta)}>{helperText}</p>
           ) : null}
         </>
       )}

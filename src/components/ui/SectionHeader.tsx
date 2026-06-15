@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/ui/cn";
+import { typography } from "@/lib/ui/tokens";
 
 type SectionHeaderProps = {
   title: string;
@@ -22,9 +23,9 @@ export function SectionHeader({
       )}
     >
       <div>
-        <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
+        <h2 className={typography.sectionTitle}>{title}</h2>
         {description ? (
-          <p className="mt-1 text-sm text-text-secondary">{description}</p>
+          <p className={cn("mt-1", typography.body)}>{description}</p>
         ) : null}
       </div>
       {action}

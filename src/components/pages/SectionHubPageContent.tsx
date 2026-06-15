@@ -33,7 +33,7 @@ export function SectionHubPageContent({
       <section className="grid gap-3 sm:grid-cols-2">
         {links.map((link) => (
           <Card key={link.href} as="article">
-            <h2 className="text-lg font-semibold text-text-primary">
+            <h2 className="text-base font-medium tracking-tight text-text-primary">
               <Link href={link.href} className="hover:text-selection-from">
                 {t(link.labelKey)}
               </Link>

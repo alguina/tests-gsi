@@ -1,4 +1,5 @@
 import { cn } from "@/lib/ui/cn";
+import { typography } from "@/lib/ui/tokens";
 
 type StatCardProps = {
   label: string;
@@ -16,18 +17,16 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border bg-surface p-4 shadow-sm",
+        "rounded-md border border-border-subtle bg-surface px-4 py-3.5",
         className,
       )}
     >
-      <p className="text-xs font-medium uppercase tracking-wide text-text-muted">
-        {label}
-      </p>
+      <p className={typography.statLabel}>{label}</p>
       <p
         className={cn(
-          "mt-2 font-semibold text-text-primary",
-          size === "md" ? "text-2xl" : "text-lg",
-          size === "md" && "break-words",
+          "mt-1.5",
+          size === "md" ? typography.statValue : typography.statValueSm,
+          "break-words",
         )}
       >
         {value}

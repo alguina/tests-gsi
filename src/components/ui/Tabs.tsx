@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/ui/cn";
+import { controlStyles, typography } from "@/lib/ui/tokens";
 
 export type TabItem = {
   id: string;
@@ -30,7 +31,7 @@ export function Tabs({
         role="tablist"
         aria-label={ariaLabel}
         className={cn(
-          "flex gap-1 overflow-x-auto border-b border-border pb-px",
+          "flex gap-6 overflow-x-auto border-b border-border-subtle",
           listClassName,
         )}
       >
@@ -48,10 +49,12 @@ export function Tabs({
               tabIndex={selected ? 0 : -1}
               onClick={() => onChange(tab.id)}
               className={cn(
-                "shrink-0 rounded-t-xl px-4 py-2.5 text-sm font-medium transition",
+                typography.navLink,
+                "relative shrink-0 border-b-2 pb-3 pt-1 transition",
+                controlStyles.focusRing,
                 selected
-                  ? "border border-b-0 border-border bg-surface text-selection-from"
-                  : "text-text-secondary hover:bg-surface-muted hover:text-text-primary",
+                  ? "border-accent text-text-primary"
+                  : "border-transparent text-text-muted hover:text-text-secondary",
               )}
             >
               {tab.label}
@@ -84,7 +87,7 @@ export function TabPanel({
       role="tabpanel"
       aria-labelledby={labelledBy}
       hidden={hidden}
-      className={cn(hidden ? "hidden" : "pt-4", className)}
+      className={cn(hidden ? "hidden" : "pt-6", className)}
     >
       {children}
     </section>

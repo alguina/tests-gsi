@@ -61,7 +61,7 @@ export function HistoryPageContent({
                       {t("history.mode", { mode: session.mode })}
                     </p>
                   </div>
-                  <p className="text-lg font-semibold text-text-primary">
+                  <p className="text-base font-medium tabular-nums tracking-tight text-text-primary">
                     {t("history.netScore", {
                       score: formatScore(session.netScore),
                     })}

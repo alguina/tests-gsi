@@ -169,7 +169,7 @@ export function Dropdown({
               id={menuId}
               role="menu"
               className={cn(
-                "fixed z-50 rounded-2xl border border-border bg-surface shadow-lg",
+                "fixed z-50 rounded-lg border border-border bg-surface shadow-[0_8px_28px_rgb(26_26_26_/_0.10)]",
                 menuClassName,
               )}
               style={{

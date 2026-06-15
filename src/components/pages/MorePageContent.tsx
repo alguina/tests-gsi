@@ -26,7 +26,7 @@ export function MorePageContent() {
         {MORE_SECTION_LINKS.filter((link) => link.href !== "/more#profile").map(
           (link) => (
             <Card key={link.href} as="article">
-              <h2 className="text-lg font-semibold text-text-primary">
+              <h2 className="text-base font-medium tracking-tight text-text-primary">
                 <Link href={link.href} className="hover:text-selection-from">
                   {t(link.labelKey)}
                 </Link>
@@ -43,7 +43,7 @@ export function MorePageContent() {
 
       <section id="profile">
       <Card as="section" className="mt-6">
-        <h2 className="text-lg font-semibold text-text-primary">
+        <h2 className="text-base font-medium tracking-tight text-text-primary">
           {t("nav.profile")}
         </h2>
         <p className="mt-2 text-sm text-text-secondary">
@@ -67,7 +67,7 @@ export function MorePageContent() {
       </section>
 
       <Card as="section" className="mt-6">
-        <h2 className="text-lg font-semibold text-text-primary">
+        <h2 className="text-base font-medium tracking-tight text-text-primary">
           {t("nav.settings")}
         </h2>
         <p className="mt-2 text-sm text-text-secondary">

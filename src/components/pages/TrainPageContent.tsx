@@ -5,6 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { loadFailedQuestionsCount, loadStudyRecommendation } from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useProfile } from "@/components/profile/ProfileProvider";
+import {
+  QUESTION_COUNT_PILL_CLASS,
+  QuestionCountSelector,
+} from "@/components/training/QuestionCountSelector";
 import { TrainingModePanel } from "@/components/training/TrainingModePanel";
 import { SelectableOption } from "@/components/ui/SelectableOption";
 import { Button } from "@/components/ui/Button";
@@ -25,6 +29,8 @@ import {
   TEST_QUESTION_COUNTS,
   TOPIC_QUESTION_COUNTS,
 } from "@/lib/testSession";
+
+const RECOMMENDED_QUESTION_COUNTS = [10, 25, 50] as const;
 
 const TRAIN_TABS = [
   "random",
@@ -182,23 +188,12 @@ export function TrainPageContent({
           title={t("training.randomTitle")}
           description={t("training.randomDescription")}
           controls={
-            <>
-              <p className="text-sm font-medium text-text-primary">
-                {t("test.numberOfQuestions")}
-              </p>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {TEST_QUESTION_COUNTS.map((count) => (
-                  <SelectableOption
-                    key={count}
-                    selected={selectedCount === count}
-                    onClick={() => setSelectedCount(count)}
-                    className="px-3 py-3"
-                  >
-                    {t("test.questionsCount", { count })}
-                  </SelectableOption>
-                ))}
-              </div>
-            </>
+            <QuestionCountSelector
+              label={t("test.numberOfQuestions")}
+              options={TEST_QUESTION_COUNTS}
+              value={selectedCount}
+              onChange={setSelectedCount}
+            />
           }
           action={
             <Button onClick={handleStartRandomTest}>
@@ -225,7 +220,7 @@ export function TrainPageContent({
             hasRecommendationData ? (
               <>
                 {recommendation?.reasons.length ? (
-                  <ul className="space-y-2 rounded-xl bg-surface-muted p-3 text-sm text-text-secondary">
+                  <ul className="space-y-2 rounded-md bg-surface-muted p-3 text-sm text-text-secondary">
                     {recommendation.reasons.map((reason) => (
                       <li key={reason.code}>
                         {formatRecommendationReason(t, reason)}
@@ -233,20 +228,12 @@ export function TrainPageContent({
                     ))}
                   </ul>
                 ) : null}
-                <p className="text-sm font-medium text-text-primary">
-                  {t("test.numberOfQuestions")}
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  {[10, 25, 50].map((count) => (
-                    <SelectableOption
-                      key={count}
-                      selected={recommendedCount === count}
-                      onClick={() => setRecommendedCount(count)}
-                    >
-                      {t("test.questionsCount", { count })}
-                    </SelectableOption>
-                  ))}
-                </div>
+                <QuestionCountSelector
+                  label={t("test.numberOfQuestions")}
+                  options={RECOMMENDED_QUESTION_COUNTS}
+                  value={recommendedCount}
+                  onChange={setRecommendedCount}
+                />
               </>
             ) : undefined
           }
@@ -279,25 +266,12 @@ export function TrainPageContent({
           }
           controls={
             failedCount !== null && failedCount > 0 ? (
-              <>
-                <p className="text-sm font-medium text-text-primary">
-                  {t("test.numberOfQuestions")}
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  {FAILED_QUESTION_COUNTS.map((count) => (
-                    <SelectableOption
-                      key={String(count)}
-                      selected={selectedFailedCount === count}
-                      onClick={() => setSelectedFailedCount(count)}
-                      className="px-3 py-3"
-                    >
-                      {count === "all"
-                        ? t("test.filterAll")
-                        : t("test.questionsCount", { count })}
-                    </SelectableOption>
-                  ))}
-                </div>
-              </>
+              <QuestionCountSelector
+                label={t("test.numberOfQuestions")}
+                options={FAILED_QUESTION_COUNTS}
+                value={selectedFailedCount}
+                onChange={setSelectedFailedCount}
+              />
             ) : undefined
           }
           action={
@@ -328,35 +302,24 @@ export function TrainPageContent({
                 <p className="text-sm font-medium text-text-primary">
                   {t("test.topicLabel")}
                 </p>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   {topics.map((topic) => (
                     <SelectableOption
                       key={topic.topic}
                       selected={selectedTopic === topic.topic}
                       onClick={() => setSelectedTopic(topic.topic)}
-                      className="px-3 py-3 text-left"
+                      className={`${QUESTION_COUNT_PILL_CLASS} text-left`}
                     >
                       {topic.displayLabel.trim() || t("topics.noTopic")}
                     </SelectableOption>
                   ))}
                 </div>
-                <p className="text-sm font-medium text-text-primary">
-                  {t("test.numberOfQuestions")}
-                </p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {TOPIC_QUESTION_COUNTS.map((count) => (
-                    <SelectableOption
-                      key={String(count)}
-                      selected={selectedTopicCount === count}
-                      onClick={() => setSelectedTopicCount(count)}
-                      className="px-3 py-3"
-                    >
-                      {count === "all"
-                        ? t("test.filterAll")
-                        : t("test.questionsCount", { count })}
-                    </SelectableOption>
-                  ))}
-                </div>
+                <QuestionCountSelector
+                  label={t("test.numberOfQuestions")}
+                  options={TOPIC_QUESTION_COUNTS}
+                  value={selectedTopicCount}
+                  onChange={setSelectedTopicCount}
+                />
                 <div className="grid gap-3 sm:grid-cols-3">
                   {(
                     [
@@ -369,7 +332,7 @@ export function TrainPageContent({
                       key={filter}
                       selected={selectedTopicFilter === filter}
                       onClick={() => setSelectedTopicFilter(filter)}
-                      className="px-3 py-3"
+                      className={QUESTION_COUNT_PILL_CLASS}
                     >
                       {t(labelKey)}
                     </SelectableOption>
@@ -399,34 +362,19 @@ export function TrainPageContent({
           helperText={t("exam.scoringRules")}
           controls={
             <>
-              <p className="text-sm font-medium text-text-primary">
-                {t("exam.questionCount")}
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {EXAM_QUESTION_COUNTS.map((count) => (
-                  <SelectableOption
-                    key={count}
-                    selected={examQuestionCount === count}
-                    onClick={() => setExamQuestionCount(count)}
-                  >
-                    {t("test.questionsCount", { count })}
-                  </SelectableOption>
-                ))}
-              </div>
-              <p className="text-sm font-medium text-text-primary">
-                {t("exam.timeLimit")}
-              </p>
-              <div className="grid grid-cols-3 gap-3">
-                {EXAM_TIME_LIMITS_MINUTES.map((minutes) => (
-                  <SelectableOption
-                    key={minutes}
-                    selected={examTimeMinutes === minutes}
-                    onClick={() => setExamTimeMinutes(minutes)}
-                  >
-                    {t("exam.minutes", { count: minutes })}
-                  </SelectableOption>
-                ))}
-              </div>
+              <QuestionCountSelector
+                label={t("exam.questionCount")}
+                options={EXAM_QUESTION_COUNTS}
+                value={examQuestionCount}
+                onChange={setExamQuestionCount}
+              />
+              <QuestionCountSelector
+                label={t("exam.timeLimit")}
+                options={EXAM_TIME_LIMITS_MINUTES}
+                value={examTimeMinutes}
+                onChange={setExamTimeMinutes}
+                formatLabel={(minutes) => t("exam.minutes", { count: minutes })}
+              />
             </>
           }
           action={

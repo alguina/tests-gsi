@@ -59,7 +59,7 @@ export function ExamResultsContent({ result }: ExamResultsContentProps) {
 
       {result.previousSimulations.length ? (
         <Card as="section">
-          <h2 className="text-lg font-semibold text-text-primary">
+          <h2 className="text-base font-medium tracking-tight text-text-primary">
             {t("exam.previousSimulations")}
           </h2>
           <TableWrap className="mt-4">
@@ -97,7 +97,7 @@ export function ExamResultsContent({ result }: ExamResultsContentProps) {
 
       {result.topicBreakdown.length ? (
         <Card as="section">
-          <h2 className="text-lg font-semibold text-text-primary">
+          <h2 className="text-base font-medium tracking-tight text-text-primary">
             {t("exam.topicBreakdown")}
           </h2>
           <TableWrap className="mt-4">

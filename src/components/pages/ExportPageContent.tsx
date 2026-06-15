@@ -205,8 +205,8 @@ export function ExportPageContent() {
 
       {preview ? (
         <Card as="section" className="mt-6">
-          <h2 className="text-lg font-semibold text-text-primary">{t("export.previewTitle")}</h2>
-          <pre className="mt-4 max-h-[32rem] overflow-auto whitespace-pre-wrap rounded-xl bg-surface-muted p-4 text-sm text-text-primary">
+          <h2 className="text-base font-medium tracking-tight text-text-primary">{t("export.previewTitle")}</h2>
+          <pre className="mt-4 max-h-[32rem] overflow-auto whitespace-pre-wrap rounded-md bg-surface-muted p-4 text-sm text-text-primary">
             {preview}
           </pre>
         </Card>

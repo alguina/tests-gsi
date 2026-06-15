@@ -1,8 +1,15 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
-import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/ui/cn";
+import { controlStyles, typography } from "@/lib/ui/tokens";
+
+type BackLink = {
+  href: string;
+  label: string;
+};
 
 type PageHeaderProps = {
+  backLink?: BackLink;
   eyebrow?: string;
   title: string;
   description?: ReactNode;
@@ -12,7 +19,34 @@ type PageHeaderProps = {
   className?: string;
 };
 
+function HeaderBackLink({ href, label }: BackLink) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-sm text-sm text-text-muted transition hover:text-text-secondary",
+        controlStyles.focusRing,
+      )}
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 16 16"
+        className="h-3.5 w-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M10 3 5 8l5 5" />
+      </svg>
+      {label}
+    </Link>
+  );
+}
+
 export function PageHeader({
+  backLink,
   eyebrow,
   title,
   description,
@@ -21,48 +55,45 @@ export function PageHeader({
   variant = "default",
   className,
 }: PageHeaderProps) {
-  if (variant === "hero") {
-    return (
-      <Card padding="lg" className={cn("rounded-3xl overflow-visible", className)}>
-        {eyebrow ? (
-          <p className="text-sm font-medium uppercase tracking-wide text-text-muted">
-            {eyebrow}
-          </p>
-        ) : null}
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight text-text-primary">
-          {title}
-        </h1>
-        {description ? (
-          <p className="mt-2 max-w-2xl text-base leading-7 text-text-secondary">
-            {description}
-          </p>
-        ) : null}
-        {actions ? (
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">{actions}</div>
-        ) : null}
-      </Card>
-    );
-  }
+  const isHero = variant === "hero";
+  const Wrapper = isHero ? "section" : "header";
 
   return (
-    <header className={cn("space-y-2", className)}>
-      {eyebrow ? (
-        <p className="text-sm font-medium uppercase tracking-wide text-text-muted">
-          {eyebrow}
-        </p>
+    <Wrapper
+      className={cn(
+        "overflow-visible border-b border-border-subtle",
+        isHero ? "pb-8" : "pb-6",
+        className,
+      )}
+    >
+      {backLink ? (
+        <div className="mb-7">
+          <HeaderBackLink {...backLink} />
+        </div>
       ) : null}
-      <h1 className="text-3xl font-semibold tracking-tight text-text-primary">
+
+      {eyebrow ? <p className={typography.eyebrow}>{eyebrow}</p> : null}
+
+      <h1
+        className={cn(
+          eyebrow ? "mt-3" : undefined,
+          isHero ? typography.pageTitleHero : typography.pageTitle,
+        )}
+      >
         {title}
       </h1>
+
       {description ? (
-        <p className="max-w-2xl text-base leading-7 text-text-secondary">
+        <p className={cn("mt-3 max-w-2xl", typography.bodyLarge)}>
           {description}
         </p>
       ) : null}
-      {meta}
+
+      {meta ? <div className="mt-3">{meta}</div> : null}
+
       {actions ? (
-        <div className="flex flex-col gap-3 pt-1 sm:flex-row">{actions}</div>
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row">{actions}</div>
       ) : null}
-    </header>
+    </Wrapper>
   );
 }
