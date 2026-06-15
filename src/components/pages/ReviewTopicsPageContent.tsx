@@ -99,6 +99,12 @@ export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps
                             {topic.sourceHint}
                           </p>
                         ) : null}
+                        {topic.rawBlock && topic.rawBlock !== topic.displayLabel ? (
+                          <p className="mt-1 text-xs text-text-muted">
+                            {t("topics.rawBlock")}: {topic.rawBlock}
+                            {topic.topic ? ` · ${t("topics.rawTopic")}: ${topic.topic}` : ""}
+                          </p>
+                        ) : null}
                       </TableCell>
                       <TableCell>
                         {topic.description ?? t("common.dash")}

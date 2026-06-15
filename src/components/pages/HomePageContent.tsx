@@ -5,7 +5,7 @@ import { useState } from "react";
 import { discardTest } from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useProfile } from "@/components/profile/ProfileProvider";
-import { StartTrainingMenu } from "@/components/training/StartTrainingMenu";
+import { HomeTrainingMenu } from "@/components/training/HomeTrainingMenu";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -17,13 +17,26 @@ import type { StudyRecommendation } from "@/lib/recommendations/types";
 import { RECOMMENDED_DEFAULT_COUNT } from "@/lib/recommendations/constants";
 import type { getHomeStudyStats } from "@/lib/studyMetrics";
 import {
-  TEST_MODE_EXAM,
-} from "@/lib/testSession";
+  formatTopicDisplayList,
+} from "@/lib/topics/formatTopicDisplay";
+import { TEST_MODE_EXAM } from "@/lib/testSession";
 
 type HomePageContentProps = {
   stats: Awaited<ReturnType<typeof getHomeStudyStats>>;
   recommendation: StudyRecommendation | null;
 };
+
+function formatMetricValue(
+  value: number | null,
+  formatter: (value: number) => string,
+  emptyLabel: string,
+): string {
+  if (value === null) {
+    return emptyLabel;
+  }
+
+  return formatter(value);
+}
 
 export function HomePageContent({ stats, recommendation }: HomePageContentProps) {
   const { t } = useI18n();
@@ -33,8 +46,9 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
     ? t("home.greeting", { name: profile.name })
     : t("home.eyebrow");
 
-  const hasRecommendationData = stats.totalQuestionsAnswered > 0;
+  const hasRecommendationData = stats.questionsAnswered > 0;
   const suggestedCount = recommendation?.suggestedCount ?? RECOMMENDED_DEFAULT_COUNT;
+  const notEnoughData = t("home.notEnoughData");
 
   return (
     <PageContainer>
@@ -43,12 +57,12 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
         eyebrow={t("home.eyebrow")}
         title={heroTitle}
         description={t("home.description")}
+        className="overflow-visible"
         actions={
-          <StartTrainingMenu
-            hasRecommendationData={hasRecommendationData}
+          <HomeTrainingMenu
             recommendedCount={suggestedCount}
             fullWidth
-            className="sm:w-auto"
+            className="w-full sm:w-auto"
           />
         }
       />
@@ -76,20 +90,47 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
         </Card>
       ) : null}
 
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-        <StatCard label={t("home.totalQuestions")} value={stats.totalQuestionsImported} />
-        <StatCard label={t("home.totalTests")} value={stats.totalSourcesImported} />
-        <StatCard label={t("home.questionsAnswered")} value={stats.totalQuestionsAnswered} />
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <StatCard
-          label={t("home.averageNetScore")}
+          label={t("home.latestNetScore")}
+          value={formatMetricValue(
+            stats.latestNetScore,
+            formatScore,
+            notEnoughData,
+          )}
+        />
+        <StatCard
+          label={t("home.recentAverageNetScore")}
+          value={formatMetricValue(
+            stats.recentAverageNetScore,
+            formatScore,
+            notEnoughData,
+          )}
+        />
+        <StatCard
+          label={t("home.questionsAnswered")}
+          value={stats.questionsAnswered}
+        />
+        <StatCard
+          label={t("home.overallAccuracy")}
           value={
-            stats.averageNetScore === null
-              ? t("common.dash")
-              : formatScore(stats.averageNetScore)
+            stats.overallAccuracy === null
+              ? notEnoughData
+              : `${stats.overallAccuracy}%`
           }
         />
-        <StatCard label={t("home.weakTopics")} value={stats.weakTopicsCount} />
-        <StatCard label={t("home.pendingReview")} value={stats.pendingReviewQuestions} />
+        <StatCard
+          label={t("home.mistakesToReview")}
+          value={stats.mistakesToReview}
+        />
+        <StatCard
+          label={t("home.weakTopics")}
+          value={
+            stats.weakTopicsCount === null
+              ? notEnoughData
+              : stats.weakTopicsCount
+          }
+        />
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
@@ -98,7 +139,7 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
           recommendation={recommendation}
           suggestedCount={suggestedCount}
         />
-        <LatestSessionCard latestSession={stats.latestSession} />
+        <ProgressLinksCard />
       </section>
     </PageContainer>
   );
@@ -116,6 +157,13 @@ function RecommendedCard({
   const { t } = useI18n();
   const topics = recommendation?.topics ?? [];
   const reasons = recommendation?.reasons ?? [];
+  const primaryReason = reasons[0];
+  const topicPreview = formatTopicDisplayList(
+    topics.map((topic) => ({
+      topic: topic.topic,
+      topicTitle: topic.topicTitle,
+    })),
+  );
 
   return (
     <Card as="article">
@@ -124,7 +172,7 @@ function RecommendedCard({
       </p>
       <h2 className="mt-2 text-xl font-semibold text-text-primary">
         {hasAttempts
-          ? t("training.recommended")
+          ? t("home.recommendedSummary", { count: suggestedCount })
           : t("home.startWithRandomTest")}
       </h2>
       <p className="mt-2 text-sm leading-6 text-text-secondary">
@@ -135,44 +183,61 @@ function RecommendedCard({
       {hasAttempts && recommendation ? (
         <>
           <div className="mt-4 space-y-2 rounded-xl bg-surface-muted p-3 text-sm text-text-primary">
-            <p>
-              {t("recommendation.suggestedSize", { count: suggestedCount })}
-            </p>
-            {topics.length ? (
+            {!topicPreview.hasPoorLabels && topicPreview.visible.length ? (
               <p>
-                {t("recommendation.selectedTopics", {
-                  topics: topics
-                    .map((topic) =>
-                      topic.topicTitle
-                        ? t("dashboard.failedTopicWithTitle", {
-                            topic: topic.topic,
-                            title: topic.topicTitle,
-                          })
-                        : topic.topic,
-                    )
-                    .join(", "),
+                {t("home.focus", {
+                  topics: topicPreview.visible.join(", "),
                 })}
+                {topicPreview.remaining > 0
+                  ? ` ${t("home.moreTopics", { count: topicPreview.remaining })}`
+                  : ""}
               </p>
             ) : null}
-            {reasons.map((reason) => (
-              <p key={reason.code} className="text-text-secondary">
-                {formatRecommendationReason(t, reason)}
+            {primaryReason ? (
+              <p className="text-text-secondary">
+                {t("home.reason")}: {formatRecommendationReason(t, primaryReason)}
               </p>
-            ))}
+            ) : null}
           </div>
           <Button
             href={`/test?mode=recommended&count=${suggestedCount}`}
             className="mt-4"
           >
-            {t("recommendation.startTraining")}
+            {t("training.startRecommended")}
           </Button>
         </>
       ) : (
-        <StartTrainingMenu
-          hasRecommendationData={false}
-          className="mt-4"
-        />
+        <HomeTrainingMenu className="mt-4" />
       )}
+    </Card>
+  );
+}
+
+function ProgressLinksCard() {
+  const { t } = useI18n();
+
+  return (
+    <Card as="article">
+      <p className="text-sm font-medium uppercase tracking-wide text-text-muted">
+        {t("nav.progress")}
+      </p>
+      <h2 className="mt-2 text-xl font-semibold text-text-primary">
+        {t("home.progressLinksTitle")}
+      </h2>
+      <p className="mt-2 text-sm leading-6 text-text-secondary">
+        {t("home.progressLinksDescription")}
+      </p>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <Button href="/dashboard" variant="secondary">
+          {t("nav.dashboard")}
+        </Button>
+        <Button href="/history" variant="secondary">
+          {t("nav.history")}
+        </Button>
+        <Button href="/review-topics" variant="secondary">
+          {t("nav.reviewTopics")}
+        </Button>
+      </div>
     </Card>
   );
 }
@@ -198,48 +263,5 @@ function DiscardInProgressButton({ sessionId }: { sessionId: string }) {
     >
       {t("home.discardInProgressTest")}
     </Button>
-  );
-}
-
-function LatestSessionCard({
-  latestSession,
-}: {
-  latestSession: HomePageContentProps["stats"]["latestSession"];
-}) {
-  const { t } = useI18n();
-
-  return (
-    <Card as="article">
-      <p className="text-sm font-medium uppercase tracking-wide text-text-muted">
-        {t("home.latestSession")}
-      </p>
-      {latestSession ? (
-        <>
-          <h2 className="mt-2 text-xl font-semibold text-text-primary">
-            {t("home.netScore", { score: formatScore(latestSession.netScore) })}
-          </h2>
-          <p className="mt-2 text-sm text-text-secondary">
-            {t("home.sessionSummary", {
-              correct: latestSession.correctCount,
-              wrong: latestSession.wrongCount,
-              blank: latestSession.blankCount,
-              total: latestSession.totalQuestions,
-            })}
-          </p>
-          <Button href="/history" variant="link" className="mt-4 px-0">
-            {t("home.viewHistory")}
-          </Button>
-        </>
-      ) : (
-        <>
-          <h2 className="mt-2 text-xl font-semibold text-text-primary">
-            {t("home.noSessionsYet")}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-text-secondary">
-            {t("home.noSessionsDescription")}
-          </p>
-        </>
-      )}
-    </Card>
   );
 }

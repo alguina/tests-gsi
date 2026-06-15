@@ -27,6 +27,30 @@ export const es: Dictionary = {
   "training.notEnoughDataForRecommendations":
     "Aún no hay suficientes datos para recomendar. Empieza con un test aleatorio.",
   "training.recommendedBadge": "Sugerido",
+  "training.otherTests": "Otros tests",
+  "training.mistakes": "Fallos",
+  "training.byTopic": "Por tema",
+  "training.simulation": "Simulación",
+  "training.randomTitle": "Test aleatorio",
+  "training.randomDescription":
+    "Practica con preguntas aleatorias del banco.",
+  "training.recommendedTitle": "Entrenamiento recomendado",
+  "training.recommendedDescription":
+    "Genera un test según tus áreas débiles y fallos recientes.",
+  "training.mistakesTitle": "Repasar fallos",
+  "training.mistakesDescription":
+    "Vuelve a practicar preguntas que has fallado.",
+  "training.byTopicTitle": "Entrenar por tema",
+  "training.byTopicDescription":
+    "Elige un tema concreto para practicar.",
+  "training.simulationTitle": "Simulación de examen",
+  "training.simulationDescription":
+    "Haz un test en condiciones más parecidas al examen.",
+  "training.startRandom": "Empezar test aleatorio",
+  "training.startRecommended": "Empezar recomendado",
+  "training.startMistakes": "Repasar fallos",
+  "training.startByTopic": "Entrenar tema",
+  "training.startSimulation": "Iniciar simulación",
 
   "trainSection.eyebrow": "Entrenamiento",
   "trainSection.description":
@@ -111,6 +135,18 @@ export const es: Dictionary = {
   "home.averageNetScore": "Nota media neta",
   "home.weakTopics": "Temas débiles",
   "home.pendingReview": "Pendientes de repaso",
+  "home.latestNetScore": "Última nota neta",
+  "home.recentAverageNetScore": "Media neta últimos tests",
+  "home.overallAccuracy": "Precisión global",
+  "home.mistakesToReview": "Fallos pendientes de repaso",
+  "home.notEnoughData": "Sin datos suficientes",
+  "home.recommendedSummary": "Recomendado: {count} preguntas",
+  "home.focus": "Foco: {topics}",
+  "home.reason": "Motivo",
+  "home.moreTopics": "+ {count} más",
+  "home.progressLinksTitle": "Sigue tu progreso",
+  "home.progressLinksDescription":
+    "Consulta métricas detalladas, historial y temas.",
   "home.recommendedToday": "Recomendado hoy",
   "home.reviewRecentMistakes": "Repasar errores recientes",
   "home.startWithRandomTest": "Empezar con un test aleatorio",
@@ -540,4 +576,8 @@ export const es: Dictionary = {
   "common.retry": "Reintentar",
   "common.correct": "Correcta",
   "common.dash": "—",
+  "common.more": "+ {count} más",
+  "common.configure": "Configurar",
+  "common.start": "Empezar",
+  "common.emptyState": "Sin datos",
 };

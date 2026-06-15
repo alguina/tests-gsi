@@ -42,12 +42,12 @@ export const TRAIN_SECTION_LINKS: NavLinkItem[] = [
     descriptionKey: "trainSection.recommendedDescription",
   },
   {
-    href: "/train?focus=random",
+    href: "/train?tab=random",
     labelKey: "training.random",
     descriptionKey: "trainSection.randomDescription",
   },
   {
-    href: "/train?focus=failed",
+    href: "/train?tab=mistakes",
     labelKey: "training.reviewMistakes",
     descriptionKey: "trainSection.failedDescription",
   },

@@ -19,6 +19,7 @@ import { useI18n } from "@/lib/i18n/useI18n";
 import type { RecommendationReason } from "@/lib/recommendations/types";
 import { formatScore } from "@/lib/stats/formatScore";
 import type { DashboardStudyMetrics } from "@/lib/studyMetrics";
+import { formatTopicDisplayLabel } from "@/lib/topics/formatTopicDisplay";
 import { cn } from "@/lib/ui/cn";
 
 type DashboardPageContentProps = {
@@ -30,9 +31,8 @@ function formatTopicLabel(
   topic: string,
   topicTitle: string | null,
 ): string {
-  return topicTitle
-    ? t("dashboard.failedTopicWithTitle", { topic, title: topicTitle })
-    : topic;
+  const label = formatTopicDisplayLabel({ topic, topicTitle });
+  return label || t("topics.noTopic");
 }
 
 function Sparkline({

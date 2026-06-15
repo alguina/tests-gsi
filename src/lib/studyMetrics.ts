@@ -35,16 +35,16 @@ export type LatestSession = {
 
 export type HomeStudyStats = {
   userId: string;
-  totalQuestionsImported: number;
-  totalSourcesImported: number;
-  totalQuestionsAnswered: number;
-  totalSessionsCompleted: number;
-  averageNetScore: number | null;
-  weakTopicsCount: number;
-  pendingReviewQuestions: number;
+  latestNetScore: number | null;
+  recentAverageNetScore: number | null;
+  questionsAnswered: number;
+  overallAccuracy: number | null;
+  mistakesToReview: number;
+  weakTopicsCount: number | null;
   latestSession: LatestSession | null;
   inProgressSession: InProgressSession | null;
-  failedQuestionsAvailable: number;
+  /** @deprecated Use questionsAnswered */
+  totalQuestionsAnswered: number;
 };
 
 export type DashboardStats = {
@@ -122,10 +122,8 @@ export async function getHomeStudyStats(
 ): Promise<HomeStudyStats> {
   const supabase = createServerSupabaseClient();
 
-  const [sourcesResult, questionsResult, attemptsResult, sessionsResult, inProgressSession, failedQuestionsAvailable] =
+  const [attemptsResult, sessionsResult, inProgressSession, failedQuestionsAvailable] =
     await Promise.all([
-      supabase.from("sources").select("id", { count: "exact", head: true }),
-      supabase.from("questions").select("id", { count: "exact", head: true }),
       supabase
         .from("attempts")
         .select("id, is_correct, is_blank")
@@ -146,40 +144,54 @@ export async function getHomeStudyStats(
   const sessions = sessionsResult.error ? [] : (sessionsResult.data ?? []);
   const completedSessions = sessions.filter((session) => session.completed_at);
   const latestRaw = completedSessions[0];
-  const wrongAttempts = attempts.filter(
-    (attempt) => !attempt.is_blank && !attempt.is_correct,
-  ).length;
 
   const trainingSessions = completedSessions.filter(
     (session) => session.mode !== TEST_MODE_EXAM,
   );
+  const recentFive = trainingSessions.slice(0, 5);
 
-  let weakTopicsCount = 0;
+  const answeredNonBlank = attempts.filter((attempt) => !attempt.is_blank);
+  const correctAttempts = answeredNonBlank.filter(
+    (attempt) => attempt.is_correct,
+  ).length;
+  const overallAccuracy =
+    answeredNonBlank.length > 0
+      ? Math.round((correctAttempts / answeredNonBlank.length) * 1000) / 10
+      : null;
+
+  let weakTopicsCount: number | null = null;
 
   if (attempts.length > 0) {
     const topicRows = await getTopicSummaries(userId);
     weakTopicsCount = topicRows.filter(
-      (topic) => topic.priority === "high" || topic.priority === "medium",
+      (topic) =>
+        topic.answered >= 3 &&
+        topic.accuracy !== null &&
+        topic.accuracy < 60,
     ).length;
   }
 
-  return {
-    userId,
-    totalSourcesImported: sourcesResult.count ?? 0,
-    totalQuestionsImported: questionsResult.count ?? 0,
-    totalQuestionsAnswered: attempts.length,
-    totalSessionsCompleted: completedSessions.length,
-    averageNetScore: trainingSessions.length
-      ? trainingSessions.reduce(
+  const recentAverageNetScore =
+    recentFive.length > 0
+      ? recentFive.reduce(
           (total, session) => total + Number(session.net_score ?? 0),
           0,
-        ) / trainingSessions.length
-      : null,
+        ) / recentFive.length
+      : null;
+
+  const latestSession = latestRaw ? mapSessionRow(latestRaw) : null;
+
+  return {
+    userId,
+    latestNetScore: latestSession?.netScore ?? null,
+    recentAverageNetScore,
+    questionsAnswered: attempts.length,
+    overallAccuracy,
+    mistakesToReview: failedQuestionsAvailable,
     weakTopicsCount,
-    pendingReviewQuestions: wrongAttempts,
-    latestSession: latestRaw ? mapSessionRow(latestRaw) : null,
+    latestSession,
     inProgressSession,
-    failedQuestionsAvailable,
+    totalQuestionsAnswered: attempts.length,
   };
 }
 

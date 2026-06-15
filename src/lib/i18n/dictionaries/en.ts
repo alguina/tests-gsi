@@ -27,6 +27,30 @@ export const en: Dictionary = {
   "training.notEnoughDataForRecommendations":
     "There is not enough data for recommendations yet. Start with a random test.",
   "training.recommendedBadge": "Suggested",
+  "training.otherTests": "Other tests",
+  "training.mistakes": "Mistakes",
+  "training.byTopic": "By topic",
+  "training.simulation": "Simulation",
+  "training.randomTitle": "Random test",
+  "training.randomDescription":
+    "Practice with random questions from the bank.",
+  "training.recommendedTitle": "Recommended training",
+  "training.recommendedDescription":
+    "Build a test from your weak areas and recent mistakes.",
+  "training.mistakesTitle": "Review mistakes",
+  "training.mistakesDescription":
+    "Practice questions you have answered incorrectly.",
+  "training.byTopicTitle": "Train by topic",
+  "training.byTopicDescription":
+    "Pick a specific topic to practice.",
+  "training.simulationTitle": "Exam simulation",
+  "training.simulationDescription":
+    "Take a test under conditions closer to the real exam.",
+  "training.startRandom": "Start random test",
+  "training.startRecommended": "Start recommended",
+  "training.startMistakes": "Review mistakes",
+  "training.startByTopic": "Train topic",
+  "training.startSimulation": "Start simulation",
 
   "trainSection.eyebrow": "Training",
   "trainSection.description":
@@ -111,6 +135,18 @@ export const en: Dictionary = {
   "home.averageNetScore": "Average net score",
   "home.weakTopics": "Weak topics",
   "home.pendingReview": "Pending review",
+  "home.latestNetScore": "Latest net score",
+  "home.recentAverageNetScore": "Recent average net score",
+  "home.overallAccuracy": "Overall accuracy",
+  "home.mistakesToReview": "Mistakes to review",
+  "home.notEnoughData": "Not enough data",
+  "home.recommendedSummary": "Recommended: {count} questions",
+  "home.focus": "Focus: {topics}",
+  "home.reason": "Reason",
+  "home.moreTopics": "+ {count} more",
+  "home.progressLinksTitle": "Track your progress",
+  "home.progressLinksDescription":
+    "View detailed metrics, history, and topics.",
   "home.recommendedToday": "Recommended today",
   "home.recommendedWithAttempts":
     "Use your pending review queue to reinforce questions you missed.",
@@ -540,4 +576,8 @@ export const en: Dictionary = {
   "common.retry": "Retry",
   "common.correct": "Correct",
   "common.dash": "—",
+  "common.more": "+ {count} more",
+  "common.configure": "Configure",
+  "common.start": "Start",
+  "common.emptyState": "No data",
 };

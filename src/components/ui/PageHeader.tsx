@@ -23,7 +23,7 @@ export function PageHeader({
 }: PageHeaderProps) {
   if (variant === "hero") {
     return (
-      <Card padding="lg" className={cn("rounded-3xl", className)}>
+      <Card padding="lg" className={cn("rounded-3xl overflow-visible", className)}>
         {eyebrow ? (
           <p className="text-sm font-medium uppercase tracking-wide text-text-muted">
             {eyebrow}
