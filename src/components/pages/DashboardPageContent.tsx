@@ -323,7 +323,7 @@ export function DashboardPageContent({ metrics }: DashboardPageContentProps) {
         <EmptyState
           title={t("dashboard.noAttemptHistory")}
           description={t("dashboard.noAttemptHistoryDescription")}
-          action={<Button href="/take-test">{t("home.startTraining")}</Button>}
+          action={<Button href="/train">{t("training.start")}</Button>}
         />
       ) : null}
     </PageContainer>

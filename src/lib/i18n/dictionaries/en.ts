@@ -4,14 +4,85 @@ export const en: Dictionary = {
   "app.title": "GSI A2 Study",
 
   "nav.home": "Home",
+  "nav.train": "Train",
+  "nav.progress": "Progress",
+  "nav.more": "More",
   "nav.takeTest": "Take test",
   "nav.dashboard": "Dashboard",
   "nav.reviewTopics": "Review topics",
   "nav.history": "History",
   "nav.export": "Export",
   "nav.import": "Import",
+  "nav.settings": "Settings",
+  "nav.profile": "Profile",
   "nav.openMenu": "Open menu",
   "nav.closeMenu": "Close menu",
+
+  "training.start": "Start training",
+  "training.recommended": "Recommended",
+  "training.random": "Random",
+  "training.reviewMistakes": "Review mistakes",
+  "training.trainByTopic": "Train by topic",
+  "training.examSimulation": "Exam simulation",
+  "training.notEnoughDataForRecommendations":
+    "There is not enough data for recommendations yet. Start with a random test.",
+  "training.recommendedBadge": "Suggested",
+
+  "trainSection.eyebrow": "Training",
+  "trainSection.description":
+    "Choose how to practice: recommended, random, mistakes, topics, or exam simulation.",
+  "trainSection.recommendedDescription":
+    "Personalized session based on your mistakes, weak topics, and pending review.",
+  "trainSection.randomDescription":
+    "Practice with random questions from your imported bank.",
+  "trainSection.failedDescription":
+    "Review questions you missed in previous attempts.",
+  "trainSection.topicDescription":
+    "Train a specific topic from the available topic list.",
+  "trainSection.examDescription":
+    "Simulate an official exam with a timer and manual navigation.",
+
+  "progressSection.eyebrow": "Progress",
+  "progressSection.description":
+    "View your dashboard, history, topics, and bookmarked questions.",
+  "progressSection.dashboardDescription":
+    "Metrics, trends, and performance by topic.",
+  "progressSection.historyDescription":
+    "Completed sessions and past results.",
+  "progressSection.topicsDescription":
+    "Per-topic stats and focused topic training.",
+  "progressSection.bookmarks": "Bookmarked questions",
+  "progressSection.bookmarksDescription":
+    "Export or review questions you saved.",
+
+  "moreSection.eyebrow": "More",
+  "moreSection.description":
+    "Export, import, data quality, profile, and settings.",
+  "moreSection.exportDescription":
+    "Download your study data as Markdown.",
+  "moreSection.importDescription":
+    "Import tests from Preparatic or other sources.",
+  "moreSection.dataQuality": "Data quality",
+  "moreSection.dataQualityDescription":
+    "Audit duplicates, inconsistencies, and inactive questions.",
+  "moreSection.profileDescription":
+    "Local profile to keep results separate between testers.",
+  "moreSection.settingsDescription":
+    "Interface language and basic preferences.",
+
+  "topics.noTopic": "No topic",
+  "topics.descriptionBlock": "Description / Block",
+  "topics.availableQuestions": "Available questions",
+  "topics.answered": "Answered",
+  "topics.correct": "Correct",
+  "topics.wrong": "Wrong",
+  "topics.blank": "Blank",
+  "topics.accuracy": "Accuracy",
+  "topics.action": "Action",
+  "topics.trainTopic": "Train topic",
+  "topics.rawTopic": "Raw topic",
+  "topics.rawBlock": "Raw block",
+  "topics.source": "Source",
 
   "language.label": "Language",
 

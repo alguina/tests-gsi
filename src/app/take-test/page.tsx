@@ -1,5 +1,10 @@
-import { TakeTestPageContent } from "@/components/pages/TakeTestPageContent";
+import { redirect } from "next/navigation";
 
-export default function TakeTestPage() {
-  return <TakeTestPageContent />;
+export default async function TakeTestPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ focus?: string }>;
+}) {
+  const { focus } = await searchParams;
+  redirect(focus ? `/train?focus=${encodeURIComponent(focus)}` : "/train");
 }

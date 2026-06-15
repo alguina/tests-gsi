@@ -35,7 +35,7 @@ export function SavedPageContent({ stats, loadFailed }: SavedPageContentProps) {
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row">
-        <Button href="/take-test">{t("takeTest.startTest")}</Button>
+        <Button href="/train">{t("training.start")}</Button>
         <Button href="/import" variant="secondary">
           {t("saved.backToImport")}
         </Button>

@@ -113,7 +113,7 @@ export function HistoryPageContent({
         <EmptyState
           title={t("history.empty")}
           description={t("history.noSessionsDescription")}
-          action={<Button href="/take-test">{t("home.startTraining")}</Button>}
+          action={<Button href="/train">{t("training.start")}</Button>}
         />
       )}
     </PageContainer>

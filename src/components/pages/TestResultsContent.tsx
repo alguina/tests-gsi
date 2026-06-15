@@ -215,7 +215,7 @@ export function TestResultsContent({
           {t("test.startAnother")}
         </Button>
       ) : (
-        <Button href="/take-test" fullWidth>
+        <Button href="/train" fullWidth>
           {t("test.startAnother")}
         </Button>
       )}

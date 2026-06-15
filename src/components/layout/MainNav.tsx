@@ -9,8 +9,9 @@ import { cn } from "@/lib/ui/cn";
 import { useI18n } from "@/lib/i18n/useI18n";
 import {
   APP_TITLE_KEY,
-  isNavItemActive,
-  MAIN_NAV_ITEMS,
+  isNavSectionActive,
+  PRIMARY_NAV_SECTIONS,
+  type NavSection,
 } from "@/lib/navigation";
 import { layout } from "@/lib/ui/tokens";
 
@@ -48,7 +49,7 @@ function NavLink({
   className,
   onNavigate,
 }: {
-  item: (typeof MAIN_NAV_ITEMS)[number];
+  item: NavSection;
   isActive: boolean;
   label: string;
   className?: string;
@@ -103,9 +104,6 @@ export function MainNav() {
   const pathname = usePathname();
   const { t } = useI18n();
 
-  // Store the pathname at which the menu was opened.
-  // When pathname changes, isMenuOpen derives to false automatically —
-  // no need for a setState-in-effect to close the menu on navigation.
   const [openedAtPath, setOpenedAtPath] = useState<string | null>(null);
   const isMenuOpen = openedAtPath === pathname && openedAtPath !== null;
 
@@ -188,11 +186,11 @@ export function MainNav() {
         >
           <div className="min-h-0 overflow-hidden">
             <div className="flex flex-col gap-1 border-t border-border pb-1 pt-2">
-              {MAIN_NAV_ITEMS.map((item) => (
+              {PRIMARY_NAV_SECTIONS.map((item) => (
                 <NavLink
                   key={item.href}
                   item={item}
-                  isActive={isNavItemActive(pathname, item)}
+                  isActive={isNavSectionActive(pathname, item)}
                   label={t(item.labelKey)}
                   className="px-3 py-3"
                   onNavigate={closeMenu}
@@ -207,11 +205,11 @@ export function MainNav() {
 
         <div className="hidden items-center gap-6 lg:flex">
           <div className="flex flex-wrap items-center gap-5">
-            {MAIN_NAV_ITEMS.map((item) => (
+            {PRIMARY_NAV_SECTIONS.map((item) => (
               <NavLink
                 key={item.href}
                 item={item}
-                isActive={isNavItemActive(pathname, item)}
+                isActive={isNavSectionActive(pathname, item)}
                 label={t(item.labelKey)}
                 className="whitespace-nowrap py-1"
               />

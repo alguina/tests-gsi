@@ -585,7 +585,7 @@ export function TestPageContent({
         title={t("test.title")}
         description={t("test.description")}
         meta={
-          <Button href="/take-test" variant="link" className="px-0">
+          <Button href="/train" variant="link" className="px-0">
             {t("test.backToTakeTest")}
           </Button>
         }

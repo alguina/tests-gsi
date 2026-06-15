@@ -4,14 +4,85 @@ export const es: Dictionary = {
   "app.title": "GSI A2 Study",
 
   "nav.home": "Inicio",
+  "nav.train": "Entrenar",
+  "nav.progress": "Progreso",
+  "nav.more": "Más",
   "nav.takeTest": "Hacer test",
   "nav.dashboard": "Panel",
   "nav.reviewTopics": "Repasar temas",
   "nav.history": "Historial",
   "nav.export": "Exportar",
   "nav.import": "Importar",
+  "nav.settings": "Ajustes",
+  "nav.profile": "Perfil",
   "nav.openMenu": "Abrir menú",
   "nav.closeMenu": "Cerrar menú",
+
+  "training.start": "Iniciar entrenamiento",
+  "training.recommended": "Recomendado",
+  "training.random": "Aleatorio",
+  "training.reviewMistakes": "Repasar fallos",
+  "training.trainByTopic": "Entrenar por tema",
+  "training.examSimulation": "Simulación de examen",
+  "training.notEnoughDataForRecommendations":
+    "Aún no hay suficientes datos para recomendar. Empieza con un test aleatorio.",
+  "training.recommendedBadge": "Sugerido",
+
+  "trainSection.eyebrow": "Entrenamiento",
+  "trainSection.description":
+    "Elige cómo quieres practicar: recomendado, aleatorio, fallos, temas o simulación de examen.",
+  "trainSection.recommendedDescription":
+    "Sesión personalizada según tus fallos, temas débiles y preguntas pendientes.",
+  "trainSection.randomDescription":
+    "Practica con preguntas aleatorias del banco importado.",
+  "trainSection.failedDescription":
+    "Repasa las preguntas que fallaste en intentos anteriores.",
+  "trainSection.topicDescription":
+    "Entrena un tema concreto desde la lista de temas disponibles.",
+  "trainSection.examDescription":
+    "Simula un examen oficial con temporizador y navegación manual.",
+
+  "progressSection.eyebrow": "Progreso",
+  "progressSection.description":
+    "Consulta tu panel, historial, temas y preguntas marcadas.",
+  "progressSection.dashboardDescription":
+    "Métricas, tendencias y rendimiento por tema.",
+  "progressSection.historyDescription":
+    "Sesiones completadas y resultados anteriores.",
+  "progressSection.topicsDescription":
+    "Estadísticas por tema y acceso al entrenamiento focalizado.",
+  "progressSection.bookmarks": "Preguntas marcadas",
+  "progressSection.bookmarksDescription":
+    "Exporta o repasa las preguntas que guardaste.",
+
+  "moreSection.eyebrow": "Más opciones",
+  "moreSection.description":
+    "Exportar, importar, calidad de datos, perfil y ajustes.",
+  "moreSection.exportDescription":
+    "Descarga tus datos de estudio en Markdown.",
+  "moreSection.importDescription":
+    "Importa tests desde Preparatic u otras fuentes.",
+  "moreSection.dataQuality": "Calidad de datos",
+  "moreSection.dataQualityDescription":
+    "Audita duplicados, inconsistencias y preguntas inactivas.",
+  "moreSection.profileDescription":
+    "Perfil local para separar resultados entre testers.",
+  "moreSection.settingsDescription":
+    "Idioma de la interfaz y preferencias básicas.",
+
+  "topics.noTopic": "Sin tema",
+  "topics.descriptionBlock": "Descripción / Bloque",
+  "topics.availableQuestions": "Preguntas disponibles",
+  "topics.answered": "Respondidas",
+  "topics.correct": "Aciertos",
+  "topics.wrong": "Fallos",
+  "topics.blank": "En blanco",
+  "topics.accuracy": "Precisión",
+  "topics.action": "Acción",
+  "topics.trainTopic": "Entrenar tema",
+  "topics.rawTopic": "Tema (raw)",
+  "topics.rawBlock": "Bloque (raw)",
+  "topics.source": "Fuente",
 
   "language.label": "Idioma",
 

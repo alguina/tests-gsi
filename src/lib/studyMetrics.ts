@@ -16,6 +16,10 @@ import {
   type InProgressSession,
 } from "@/lib/testSession";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  pickDominantValue,
+  resolveTopicLabel,
+} from "@/lib/topics/resolveTopicLabel";
 
 export type LatestSession = {
   id: string;
@@ -75,6 +79,10 @@ export type DashboardStudyMetrics = {
 export type TopicSummary = {
   topic: string;
   topicTitle: string | null;
+  displayLabel: string;
+  description: string | null;
+  sourceHint: string | null;
+  rawBlock: string | null;
   totalQuestions: number;
   answered: number;
   correct: number;
@@ -388,12 +396,12 @@ export async function getTopicSummaries(
   const [questionsResult, attemptsResult] = await Promise.all([
     supabase
       .from("questions")
-      .select("id, topic, block")
+      .select("id, topic, block, exam, year, sources(title)")
       .not("topic", "is", null),
     supabase
       .from("attempts")
       .select(
-        "question_id, is_correct, is_blank, answered_at, questions(topic, block)",
+        "question_id, is_correct, is_blank, answered_at, questions(topic, block, exam, year, sources(title))",
       )
       .eq("user_id", userId)
       .order("answered_at", { ascending: false }),
@@ -405,11 +413,25 @@ export async function getTopicSummaries(
     );
   }
 
-  const topicMeta = new Map<string, { totalQuestions: number; titles: Map<string, number> }>();
+  const topicMeta = new Map<
+    string,
+    {
+      totalQuestions: number;
+      blocks: Map<string, number>;
+      exams: Map<string, number>;
+      years: Map<string, number>;
+      sourceTitles: Map<string, number>;
+    }
+  >();
 
   for (const question of questionsResult.data ?? []) {
     const topic = String(question.topic ?? "").trim();
     const block = String(question.block ?? "").trim();
+    const exam = String(question.exam ?? "").trim();
+    const year = String(question.year ?? "").trim();
+    const sourceTitle = String(
+      (question.sources as { title?: string | null } | null)?.title ?? "",
+    ).trim();
 
     if (!topic) {
       continue;
@@ -417,12 +439,27 @@ export async function getTopicSummaries(
 
     const current = topicMeta.get(topic) ?? {
       totalQuestions: 0,
-      titles: new Map<string, number>(),
+      blocks: new Map<string, number>(),
+      exams: new Map<string, number>(),
+      years: new Map<string, number>(),
+      sourceTitles: new Map<string, number>(),
     };
     current.totalQuestions += 1;
 
     if (block) {
-      current.titles.set(block, (current.titles.get(block) ?? 0) + 1);
+      current.blocks.set(block, (current.blocks.get(block) ?? 0) + 1);
+    }
+    if (exam) {
+      current.exams.set(exam, (current.exams.get(exam) ?? 0) + 1);
+    }
+    if (year) {
+      current.years.set(year, (current.years.get(year) ?? 0) + 1);
+    }
+    if (sourceTitle) {
+      current.sourceTitles.set(
+        sourceTitle,
+        (current.sourceTitles.get(sourceTitle) ?? 0) + 1,
+      );
     }
 
     topicMeta.set(topic, current);
@@ -508,13 +545,22 @@ export async function getTopicSummaries(
         priority = "medium";
       }
 
-      const topicTitle =
-        [...meta.titles.entries()].sort((left, right) => right[1] - left[1])[0]
-          ?.[0] ?? null;
+      const topicTitle = pickDominantValue(meta.blocks);
+      const resolved = resolveTopicLabel({
+        topic,
+        block: topicTitle,
+        exam: pickDominantValue(meta.exams),
+        year: pickDominantValue(meta.years),
+        sourceTitle: pickDominantValue(meta.sourceTitles),
+      });
 
       return {
         topic,
         topicTitle,
+        displayLabel: resolved.label,
+        description: resolved.description,
+        sourceHint: resolved.sourceHint,
+        rawBlock: resolved.rawBlock,
         totalQuestions: meta.totalQuestions,
         answered: totals.answered,
         correct: totals.correct,

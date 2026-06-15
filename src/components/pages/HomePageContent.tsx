@@ -5,6 +5,7 @@ import { useState } from "react";
 import { discardTest } from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useProfile } from "@/components/profile/ProfileProvider";
+import { StartTrainingMenu } from "@/components/training/StartTrainingMenu";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -17,7 +18,6 @@ import { RECOMMENDED_DEFAULT_COUNT } from "@/lib/recommendations/constants";
 import type { getHomeStudyStats } from "@/lib/studyMetrics";
 import {
   TEST_MODE_EXAM,
-  type InProgressSession,
 } from "@/lib/testSession";
 
 type HomePageContentProps = {
@@ -33,6 +33,9 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
     ? t("home.greeting", { name: profile.name })
     : t("home.eyebrow");
 
+  const hasRecommendationData = stats.totalQuestionsAnswered > 0;
+  const suggestedCount = recommendation?.suggestedCount ?? RECOMMENDED_DEFAULT_COUNT;
+
   return (
     <PageContainer>
       <PageHeader
@@ -41,9 +44,12 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
         title={heroTitle}
         description={t("home.description")}
         actions={
-          <Button href="/take-test" fullWidth className="sm:w-auto">
-            {t("home.startTraining")}
-          </Button>
+          <StartTrainingMenu
+            hasRecommendationData={hasRecommendationData}
+            recommendedCount={suggestedCount}
+            fullWidth
+            className="sm:w-auto"
+          />
         }
       />
 
@@ -88,8 +94,9 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
 
       <section className="grid gap-6 lg:grid-cols-2">
         <RecommendedCard
-          hasAttempts={stats.totalQuestionsAnswered > 0}
+          hasAttempts={hasRecommendationData}
           recommendation={recommendation}
+          suggestedCount={suggestedCount}
         />
         <LatestSessionCard latestSession={stats.latestSession} />
       </section>
@@ -100,12 +107,13 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
 function RecommendedCard({
   hasAttempts,
   recommendation,
+  suggestedCount,
 }: {
   hasAttempts: boolean;
   recommendation: StudyRecommendation | null;
+  suggestedCount: number;
 }) {
   const { t } = useI18n();
-  const suggestedCount = recommendation?.suggestedCount ?? RECOMMENDED_DEFAULT_COUNT;
   const topics = recommendation?.topics ?? [];
   const reasons = recommendation?.reasons ?? [];
 
@@ -116,7 +124,7 @@ function RecommendedCard({
       </p>
       <h2 className="mt-2 text-xl font-semibold text-text-primary">
         {hasAttempts
-          ? t("takeTest.recommendedTraining")
+          ? t("training.recommended")
           : t("home.startWithRandomTest")}
       </h2>
       <p className="mt-2 text-sm leading-6 text-text-secondary">
@@ -160,9 +168,10 @@ function RecommendedCard({
           </Button>
         </>
       ) : (
-        <Button href="/take-test" className="mt-4">
-          {t("home.startTraining")}
-        </Button>
+        <StartTrainingMenu
+          hasRecommendationData={false}
+          className="mt-4"
+        />
       )}
     </Card>
   );

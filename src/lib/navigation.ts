@@ -1,37 +1,133 @@
-export type NavItem = {
+export type NavSection = {
+  id: "home" | "train" | "progress" | "more";
   href: string;
   labelKey: string;
-  /** Additional path prefixes that should highlight this nav item */
   matchPaths?: string[];
+};
+
+export type NavLinkItem = {
+  href: string;
+  labelKey: string;
+  descriptionKey?: string;
 };
 
 export const APP_TITLE_KEY = "app.title";
 
-export const MAIN_NAV_ITEMS: NavItem[] = [
-  { href: "/", labelKey: "nav.home" },
-  { href: "/take-test", labelKey: "nav.takeTest" },
-  { href: "/dashboard", labelKey: "nav.dashboard" },
-  { href: "/review-topics", labelKey: "nav.reviewTopics" },
-  { href: "/history", labelKey: "nav.history" },
-  { href: "/export", labelKey: "nav.export" },
+export const PRIMARY_NAV_SECTIONS: NavSection[] = [
+  { id: "home", href: "/", labelKey: "nav.home" },
   {
-    href: "/import",
-    labelKey: "nav.import",
-    matchPaths: ["/discover", "/saved", "/admin"],
+    id: "train",
+    href: "/train",
+    labelKey: "nav.train",
+    matchPaths: ["/take-test", "/test"],
+  },
+  {
+    id: "progress",
+    href: "/progress",
+    labelKey: "nav.progress",
+    matchPaths: ["/dashboard", "/history", "/review-topics"],
+  },
+  {
+    id: "more",
+    href: "/more",
+    labelKey: "nav.more",
+    matchPaths: ["/export", "/import", "/discover", "/saved", "/admin"],
   },
 ];
 
-export function isNavItemActive(pathname: string, item: NavItem): boolean {
-  if (item.href === "/") {
+export const TRAIN_SECTION_LINKS: NavLinkItem[] = [
+  {
+    href: "/test?mode=recommended&count=25",
+    labelKey: "training.recommended",
+    descriptionKey: "trainSection.recommendedDescription",
+  },
+  {
+    href: "/train?focus=random",
+    labelKey: "training.random",
+    descriptionKey: "trainSection.randomDescription",
+  },
+  {
+    href: "/train?focus=failed",
+    labelKey: "training.reviewMistakes",
+    descriptionKey: "trainSection.failedDescription",
+  },
+  {
+    href: "/review-topics",
+    labelKey: "training.trainByTopic",
+    descriptionKey: "trainSection.topicDescription",
+  },
+  {
+    href: "/test/exam",
+    labelKey: "training.examSimulation",
+    descriptionKey: "trainSection.examDescription",
+  },
+];
+
+export const PROGRESS_SECTION_LINKS: NavLinkItem[] = [
+  {
+    href: "/dashboard",
+    labelKey: "nav.dashboard",
+    descriptionKey: "progressSection.dashboardDescription",
+  },
+  {
+    href: "/history",
+    labelKey: "nav.history",
+    descriptionKey: "progressSection.historyDescription",
+  },
+  {
+    href: "/review-topics",
+    labelKey: "nav.reviewTopics",
+    descriptionKey: "progressSection.topicsDescription",
+  },
+  {
+    href: "/export?type=bookmarks",
+    labelKey: "progressSection.bookmarks",
+    descriptionKey: "progressSection.bookmarksDescription",
+  },
+];
+
+export const MORE_SECTION_LINKS: NavLinkItem[] = [
+  {
+    href: "/export",
+    labelKey: "nav.export",
+    descriptionKey: "moreSection.exportDescription",
+  },
+  {
+    href: "/import",
+    labelKey: "nav.import",
+    descriptionKey: "moreSection.importDescription",
+  },
+  {
+    href: "/admin/quality",
+    labelKey: "moreSection.dataQuality",
+    descriptionKey: "moreSection.dataQualityDescription",
+  },
+  {
+    href: "/more#profile",
+    labelKey: "nav.profile",
+    descriptionKey: "moreSection.profileDescription",
+  },
+];
+
+/** @deprecated Use PRIMARY_NAV_SECTIONS */
+export const MAIN_NAV_ITEMS = PRIMARY_NAV_SECTIONS;
+
+export function isNavSectionActive(pathname: string, section: NavSection): boolean {
+  if (section.href === "/") {
     return pathname === "/";
   }
 
   const matchesPrimary =
-    pathname === item.href || pathname.startsWith(`${item.href}/`);
+    pathname === section.href || pathname.startsWith(`${section.href}/`);
 
-  const matchesAlias = item.matchPaths?.some(
+  const matchesAlias = section.matchPaths?.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
 
   return matchesPrimary || Boolean(matchesAlias);
+}
+
+/** @deprecated Use isNavSectionActive */
+export function isNavItemActive(pathname: string, item: NavSection): boolean {
+  return isNavSectionActive(pathname, item);
 }

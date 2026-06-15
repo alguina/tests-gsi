@@ -25,6 +25,17 @@ type ReviewTopicsPageContentProps = {
   topics: Awaited<ReturnType<typeof getTopicSummaries>>;
 };
 
+function formatTopicName(
+  topic: ReviewTopicsPageContentProps["topics"][number],
+  t: ReturnType<typeof useI18n>["t"],
+): string {
+  if (topic.displayLabel.trim()) {
+    return topic.displayLabel;
+  }
+
+  return t("topics.noTopic");
+}
+
 export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps) {
   const { t } = useI18n();
   const router = useRouter();
@@ -35,13 +46,9 @@ export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps
 
   const activeTopic = topics.find((topic) => topic.topic === selectedTopic);
 
-  function handleTrainTopic() {
-    if (!selectedTopic) {
-      return;
-    }
-
+  function handleTrainTopic(topicCode: string, count = selectedCount, filter = selectedFilter) {
     router.push(
-      `/test?mode=topic&topic=${encodeURIComponent(selectedTopic)}&count=${selectedCount}&filter=${selectedFilter}`,
+      `/test?mode=topic&topic=${encodeURIComponent(topicCode)}&count=${count}&filter=${filter}`,
     );
   }
 
@@ -61,17 +68,14 @@ export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps
                 <TableHead>
                   <TableRow>
                     <TableCell header>{t("reviewTopics.topic")}</TableCell>
-                    <TableCell header>{t("reviewTopics.topicTitle")}</TableCell>
-                    <TableCell header>
-                      {t("reviewTopics.totalQuestions")}
-                    </TableCell>
-                    <TableCell header>{t("reviewTopics.answered")}</TableCell>
-                    <TableCell header>{t("reviewTopics.correct")}</TableCell>
-                    <TableCell header>{t("reviewTopics.wrong")}</TableCell>
-                    <TableCell header>{t("reviewTopics.blankCount")}</TableCell>
-                    <TableCell header>{t("reviewTopics.failedCount")}</TableCell>
-                    <TableCell header>{t("reviewTopics.accuracy")}</TableCell>
-                    <TableCell header>{t("reviewTopics.priority")}</TableCell>
+                    <TableCell header>{t("topics.descriptionBlock")}</TableCell>
+                    <TableCell header>{t("topics.availableQuestions")}</TableCell>
+                    <TableCell header>{t("topics.answered")}</TableCell>
+                    <TableCell header>{t("topics.correct")}</TableCell>
+                    <TableCell header>{t("topics.wrong")}</TableCell>
+                    <TableCell header>{t("topics.blank")}</TableCell>
+                    <TableCell header>{t("topics.accuracy")}</TableCell>
+                    <TableCell header>{t("topics.action")}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -88,22 +92,36 @@ export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps
                           className="text-left hover:text-selection-from"
                           onClick={() => setSelectedTopic(topic.topic)}
                         >
-                          {topic.topic}
+                          {formatTopicName(topic, t)}
                         </button>
+                        {topic.sourceHint ? (
+                          <p className="mt-1 text-xs text-text-muted">
+                            {topic.sourceHint}
+                          </p>
+                        ) : null}
                       </TableCell>
-                      <TableCell>{topic.topicTitle ?? t("common.dash")}</TableCell>
+                      <TableCell>
+                        {topic.description ?? t("common.dash")}
+                      </TableCell>
                       <TableCell>{topic.totalQuestions}</TableCell>
                       <TableCell>{topic.answered}</TableCell>
                       <TableCell>{topic.correct}</TableCell>
                       <TableCell>{topic.wrong}</TableCell>
                       <TableCell>{topic.blank}</TableCell>
-                      <TableCell>{topic.failedCount}</TableCell>
                       <TableCell>
                         {topic.accuracy === null
                           ? t("reviewTopics.noAttempts")
                           : `${topic.accuracy}%`}
                       </TableCell>
-                      <TableCell className="capitalize">{topic.priority}</TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleTrainTopic(topic.topic)}
+                        >
+                          {t("topics.trainTopic")}
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -114,12 +132,13 @@ export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps
           {activeTopic ? (
             <Card as="section">
               <h2 className="text-lg font-semibold text-text-primary">
-                {t("test.trainTopic")}
+                {t("topics.trainTopic")}
               </h2>
               <p className="mt-2 text-sm text-text-secondary">
-                {activeTopic.topicTitle
-                  ? `${activeTopic.topic} — ${activeTopic.topicTitle}`
-                  : activeTopic.topic}
+                {formatTopicName(activeTopic, t)}
+                {activeTopic.description
+                  ? ` — ${activeTopic.description}`
+                  : null}
               </p>
 
               <p className="mt-4 text-sm font-medium text-text-primary">
@@ -162,8 +181,11 @@ export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps
                 ))}
               </div>
 
-              <Button className="mt-4" onClick={handleTrainTopic}>
-                {t("test.trainTopic")}
+              <Button
+                className="mt-4"
+                onClick={() => handleTrainTopic(activeTopic.topic)}
+              >
+                {t("topics.trainTopic")}
               </Button>
             </Card>
           ) : null}
