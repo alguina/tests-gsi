@@ -481,6 +481,7 @@ export const en: Dictionary = {
   "test.wrong": "Wrong",
   "test.blank": "Blank",
   "test.netScore": "Net score",
+  "test.gradeOver100": "Grade out of 100",
   "test.accuracy": "Accuracy",
   "test.statCorrect": "Correct",
   "test.statWrong": "Wrong",

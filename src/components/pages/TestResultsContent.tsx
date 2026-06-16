@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/Input";
 import { SelectableOption } from "@/components/ui/SelectableOption";
 import { StatCard } from "@/components/ui/StatCard";
 import { useI18n } from "@/lib/i18n/useI18n";
+import { normalizeNetScoreTo100 } from "@/lib/stats/userMetrics";
 import { cn } from "@/lib/ui/cn";
 import { typography } from "@/lib/ui/tokens";
 import { getAnswerTextByLetter } from "@/lib/testAnswerDisplay";
@@ -44,6 +45,13 @@ export function TestResultsContent({
     () => result.questions.map((question) => question.questionId),
     [result.questions],
   );
+
+  const gradeOver100 =
+    result.normalizedNetScore ??
+    normalizeNetScoreTo100(
+      result.netScore,
+      result.correctCount + result.wrongCount,
+    );
 
   useEffect(() => {
     void loadQuestionReviewState(questionIds, profile?.id).then((state) => {
@@ -127,7 +135,7 @@ export function TestResultsContent({
           </p>
         ) : null}
 
-        <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
           <StatCard
             label={t("test.totalQuestions")}
             value={result.questions.length}
@@ -143,6 +151,15 @@ export function TestResultsContent({
           <StatCard
             label={t("test.netScore")}
             value={formatScore(result.netScore)}
+            size="sm"
+          />
+          <StatCard
+            label={t("test.gradeOver100")}
+            value={
+              gradeOver100 === null
+                ? t("common.dash")
+                : formatScore(gradeOver100)
+            }
             size="sm"
           />
           <StatCard

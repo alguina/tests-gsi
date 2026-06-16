@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useI18n, useLocaleDateFormatter } from "@/lib/i18n/useI18n";
 import { formatScore } from "@/lib/stats/formatScore";
+import { normalizeNetScoreTo100 } from "@/lib/stats/userMetrics";
 import type { LatestSession } from "@/lib/studyMetrics";
 
 type HistoryPageContentProps = {
@@ -42,7 +43,13 @@ export function HistoryPageContent({
       {sessions.length ? (
         <>
           <section className="grid gap-3">
-            {sessions.map((session) => (
+            {sessions.map((session) => {
+              const gradeOver100 = normalizeNetScoreTo100(
+                session.netScore,
+                session.correctCount + session.wrongCount,
+              );
+
+              return (
               <Card key={session.id} as="article">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
@@ -61,11 +68,18 @@ export function HistoryPageContent({
                       {t("history.mode", { mode: session.mode })}
                     </p>
                   </div>
-                  <p className="text-base font-medium tabular-nums tracking-tight text-text-primary">
-                    {t("history.netScore", {
-                      score: formatScore(session.netScore),
-                    })}
-                  </p>
+                  <div className="text-left sm:text-right">
+                    <p className="text-base font-medium tabular-nums tracking-tight text-text-primary">
+                      {t("history.netScore", {
+                        score: formatScore(session.netScore),
+                      })}
+                    </p>
+                    {gradeOver100 !== null ? (
+                      <p className="mt-0.5 text-xs tabular-nums text-text-muted">
+                        {t("test.gradeOver100")}: {formatScore(gradeOver100)}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
                 <p className="mt-3 text-sm text-text-secondary">
                   {t("history.sessionSummary", {
@@ -82,7 +96,8 @@ export function HistoryPageContent({
                   {t("history.viewResults")}
                 </Button>
               </Card>
-            ))}
+              );
+            })}
           </section>
 
           <div className="mt-6 flex items-center justify-between gap-3">
