@@ -175,28 +175,26 @@ export function TestResultsContent({
       </Card>
 
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className={typography.sectionTitle}>{t("test.correction")}</h3>
-          <div className="flex flex-wrap gap-2">
-            {(
-              [
-                ["all", "test.filterAll"],
-                ["wrong", "test.filterWrong"],
-                ["blank", "test.filterBlank"],
-                ["correct", "test.filterCorrect"],
-              ] as const
-            ).map(([value, labelKey]) => (
-              <SelectableOption
-                key={value}
-                selected={filter === value}
-                size="sm"
-                onClick={() => setFilter(value)}
-                className="w-auto"
-              >
-                {t(labelKey)}
-              </SelectableOption>
-            ))}
-          </div>
+        <h3 className={typography.sectionTitle}>{t("test.correction")}</h3>
+        <div className="sticky top-[4.25rem] z-10 -mx-4 grid grid-cols-4 gap-2 border-y border-border-subtle bg-background/95 px-4 py-3 backdrop-blur-sm sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          {(
+            [
+              ["all", "test.filterAll"],
+              ["wrong", "test.filterWrong"],
+              ["blank", "test.filterBlank"],
+              ["correct", "test.filterCorrect"],
+            ] as const
+          ).map(([value, labelKey]) => (
+            <SelectableOption
+              key={value}
+              selected={filter === value}
+              size="sm"
+              onClick={() => setFilter(value)}
+              className="min-w-0 px-1.5 text-[0.6875rem] sm:px-3 sm:text-xs"
+            >
+              {t(labelKey)}
+            </SelectableOption>
+          ))}
         </div>
 
         {filteredQuestions.map((question) => {
@@ -260,6 +258,7 @@ function QuestionCorrectionCard({
   onSaveNote: () => void;
 }) {
   const { t } = useI18n();
+  const [isNoteOpen, setIsNoteOpen] = useState(false);
 
   const myAnswerDisplay = formatAnswerLine(
     question,
@@ -287,55 +286,63 @@ function QuestionCorrectionCard({
       variant="editorial"
       className={cn("border-l-2", status.accent)}
     >
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 shrink-0 text-xs font-medium tabular-nums text-text-muted">
+      <div className="flex items-start justify-between gap-3">
+        <span className="text-xs font-medium tabular-nums text-text-muted">
           {String(index + 1).padStart(2, "0")}
         </span>
-        <div className="min-w-0 flex-1 space-y-3">
-          <div className="flex items-start justify-between gap-3">
-            <h4 className="text-sm font-medium leading-6 text-text-primary">
-              {question.text}
-            </h4>
-            <Badge variant={status.variant} className="shrink-0">
-              {status.label}
-            </Badge>
-          </div>
-          {question.metadata ? (
-            <p className={typography.meta}>{question.metadata}</p>
-          ) : null}
-          <dl className="space-y-1.5 text-sm">
-            <div className="flex gap-2">
-              <dt className="shrink-0 text-text-muted">{t("test.myAnswer")}</dt>
-              <dd className="text-text-primary">{myAnswerDisplay}</dd>
-            </div>
-            <div className="flex gap-2">
-              <dt className="shrink-0 text-text-muted">
-                {t("test.correctAnswer")}
-              </dt>
-              <dd className="text-text-primary">{correctAnswerDisplay}</dd>
-            </div>
-          </dl>
+        <Badge variant={status.variant} className="shrink-0">
+          {status.label}
+        </Badge>
+      </div>
 
-          <div className="flex flex-wrap gap-2 pt-1">
-            <Button variant="subtle" size="sm" onClick={onToggleBookmark}>
-              {bookmarked ? t("test.removeFromReview") : t("test.markForReview")}
-            </Button>
-          </div>
+      <h4 className="mt-3 text-sm font-medium leading-6 text-text-primary">
+        {question.text}
+      </h4>
 
+      <div className="mt-3 space-y-3">
+        {question.metadata ? (
+          <p className={typography.meta}>{question.metadata}</p>
+        ) : null}
+        <dl className="space-y-1.5 text-sm">
+          <div className="flex gap-2">
+            <dt className="shrink-0 text-text-muted">{t("test.myAnswer")}</dt>
+            <dd className="text-text-primary">{myAnswerDisplay}</dd>
+          </div>
+          <div className="flex gap-2">
+            <dt className="shrink-0 text-text-muted">
+              {t("test.correctAnswer")}
+            </dt>
+            <dd className="text-text-primary">{correctAnswerDisplay}</dd>
+          </div>
+        </dl>
+
+        <div className="flex flex-wrap gap-2 pt-1">
+          <Button variant="subtle" size="sm" onClick={onToggleBookmark}>
+            {bookmarked ? t("test.removeFromReview") : t("test.markForReview")}
+          </Button>
+          <Button
+            variant="subtle"
+            size="sm"
+            aria-expanded={isNoteOpen}
+            onClick={() => setIsNoteOpen((current) => !current)}
+          >
+            {note ? t("test.editNote") : t("test.addNote")}
+          </Button>
+        </div>
+
+        {isNoteOpen ? (
           <div className="space-y-2 pt-1">
-            <p className={typography.meta}>
-              {note ? t("test.editNote") : t("test.addNote")}
-            </p>
             <Input
               value={draftNote}
               onChange={(event) => onDraftNoteChange(event.target.value)}
               placeholder={t("test.notePlaceholder")}
+              autoFocus
             />
             <Button variant="subtle" size="sm" onClick={onSaveNote}>
               {t("test.saveNote")}
             </Button>
           </div>
-        </div>
+        ) : null}
       </div>
     </Card>
   );
