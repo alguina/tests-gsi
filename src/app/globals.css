@@ -13,6 +13,8 @@
   --primary: #1f1f1f;
   --primary-hover: #141414;
   --primary-foreground: #fafaf8;
+  --primary-disabled: #a8a8a3;
+  --primary-disabled-foreground: #f5f5f3;
   --accent: #4a635f;
   --accent-hover: #3d524f;
   --accent-muted: #eef1f0;
@@ -24,12 +26,44 @@
   --danger: #8b4444;
   --danger-muted: #f9efef;
   --selection: #ebeae5;
+  --overlay: rgb(26 26 26 / 0.2);
   --radius-sm: 0.25rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --shadow-subtle: 0 1px 2px rgb(26 26 26 / 0.04);
   --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #161817;
+  --foreground: #eeeee9;
+  --surface: #1d201e;
+  --surface-muted: #262a27;
+  --border: #373c38;
+  --border-subtle: #2c312e;
+  --text-primary: #eeeee9;
+  --text-secondary: #b8bbb5;
+  --text-muted: #888e88;
+  --primary: #e5e4de;
+  --primary-hover: #f4f3ee;
+  --primary-foreground: #191b1a;
+  --primary-disabled: #555a56;
+  --primary-disabled-foreground: #a8aca7;
+  --accent: #91aaa4;
+  --accent-hover: #a9bdb8;
+  --accent-muted: #293532;
+  --accent-foreground: #c9d8d4;
+  --success: #82b39d;
+  --success-muted: #24342d;
+  --warning: #c3a66b;
+  --warning-muted: #382f20;
+  --danger: #c98a8a;
+  --danger-muted: #3b2727;
+  --selection: #35423e;
+  --overlay: rgb(0 0 0 / 0.58);
+  --shadow-subtle: 0 1px 2px rgb(0 0 0 / 0.18);
 }
 
 @theme inline {
@@ -56,6 +90,7 @@
   --color-danger: var(--danger);
   --color-danger-muted: var(--danger-muted);
   --color-selection: var(--selection);
+  --color-overlay: var(--overlay);
   --color-selection-from: var(--accent);
   --color-selection-to: var(--accent-hover);
   --font-sans: var(--font-sans);
@@ -84,8 +119,8 @@ body {
 
 .bg-cta:disabled,
 .bg-cta[aria-disabled="true"] {
-  background-color: #a8a8a3;
-  color: #f5f5f3;
+  background-color: var(--primary-disabled);
+  color: var(--primary-disabled-foreground);
 }
 
 ::selection {

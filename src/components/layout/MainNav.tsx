@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LanguageSelector } from "@/components/i18n/LanguageSelector";
 import { useProfile } from "@/components/profile/ProfileProvider";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { cn } from "@/lib/ui/cn";
 import { useI18n } from "@/lib/i18n/useI18n";
 import {
@@ -174,6 +175,7 @@ export function MainNav() {
           </Link>
 
           <div className="flex shrink-0 items-center gap-2 lg:hidden">
+            <ThemeToggle />
             <LanguageSelector />
             <button
               type="button"
@@ -230,6 +232,7 @@ export function MainNav() {
             ))}
           </div>
           <ProfileControl className="border-l border-border-subtle pl-6" />
+          <ThemeToggle />
           <LanguageSelector />
         </div>
       </nav>

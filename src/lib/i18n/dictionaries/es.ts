@@ -109,6 +109,10 @@ export const es: Dictionary = {
   "topics.source": "Fuente",
 
   "language.label": "Idioma",
+  "theme.light": "Claro",
+  "theme.dark": "Oscuro",
+  "theme.switchToLight": "Cambiar al modo claro",
+  "theme.switchToDark": "Cambiar al modo oscuro",
 
   "profile.chooseTitle": "Elige tu perfil",
   "profile.chooseDescription":
@@ -360,6 +364,41 @@ export const es: Dictionary = {
   "quality.flag.repeated_across_sources": "Repetida entre fuentes",
   "quality.flag.orphan_answer": "Respuesta huérfana",
   "quality.flag.source_no_questions": "Fuente sin preguntas",
+
+  "topicDiagnostics.navTitle": "Diagnóstico de metadatos",
+  "topicDiagnostics.navDescription":
+    "Inspecciona block, topic, exam, year y fuentes antes de crear etiquetas legibles.",
+  "topicDiagnostics.backToMore": "Volver a Más",
+  "topicDiagnostics.eyebrow": "Diagnóstico",
+  "topicDiagnostics.title": "Metadatos de temas",
+  "topicDiagnostics.description":
+    "Valores agregados de {count} preguntas importadas. Esta página no modifica etiquetas ni preguntas.",
+  "topicDiagnostics.copyCsv": "Copiar CSV",
+  "topicDiagnostics.copied": "Copiado",
+  "topicDiagnostics.count": "Preguntas",
+  "topicDiagnostics.block": "Block",
+  "topicDiagnostics.topic": "Topic",
+  "topicDiagnostics.exam": "Exam",
+  "topicDiagnostics.year": "Year",
+  "topicDiagnostics.sourceTitle": "Título de fuente",
+  "topicDiagnostics.sourceType": "Tipo de fuente",
+  "topicDiagnostics.examples": "Ejemplos",
+  "topicDiagnostics.blocksTitle": "Valores block más frecuentes",
+  "topicDiagnostics.blocksDescription":
+    "Valores reales almacenados en questions.block.",
+  "topicDiagnostics.topicsTitle": "Valores topic más frecuentes",
+  "topicDiagnostics.topicsDescription":
+    "Valores reales almacenados en questions.topic.",
+  "topicDiagnostics.blockTopicTitle": "Combinaciones block + topic",
+  "topicDiagnostics.blockTopicDescription":
+    "Frecuencia de pares block/topic para distinguir códigos como A1, A2, B2 o Tema 59.",
+  "topicDiagnostics.examsTitle": "Valores exam más frecuentes",
+  "topicDiagnostics.yearsTitle": "Valores year más frecuentes",
+  "topicDiagnostics.sourceTitlesTitle": "Títulos de fuente más frecuentes",
+  "topicDiagnostics.sourceTypesTitle": "Tipos de fuente más frecuentes",
+  "topicDiagnostics.examplesTitle": "Ejemplos por combinación",
+  "topicDiagnostics.examplesDescription":
+    "Agrupado por block, topic, exam, year, título y tipo de fuente, con tres textos de ejemplo por fila.",
 
   "export.eyebrow": "Exportar",
   "export.title": "Exportaciones Markdown",

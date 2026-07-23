@@ -103,6 +103,11 @@ export const MORE_SECTION_LINKS: NavLinkItem[] = [
     descriptionKey: "moreSection.dataQualityDescription",
   },
   {
+    href: "/admin/topic-diagnostics",
+    labelKey: "topicDiagnostics.navTitle",
+    descriptionKey: "topicDiagnostics.navDescription",
+  },
+  {
     href: "/more#profile",
     labelKey: "nav.profile",
     descriptionKey: "moreSection.profileDescription",

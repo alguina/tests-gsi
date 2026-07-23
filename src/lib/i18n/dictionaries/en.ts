@@ -109,6 +109,10 @@ export const en: Dictionary = {
   "topics.source": "Source",
 
   "language.label": "Language",
+  "theme.light": "Light",
+  "theme.dark": "Dark",
+  "theme.switchToLight": "Switch to light mode",
+  "theme.switchToDark": "Switch to dark mode",
 
   "profile.chooseTitle": "Choose your profile",
   "profile.chooseDescription":
@@ -360,6 +364,41 @@ export const en: Dictionary = {
   "quality.flag.repeated_across_sources": "Repeated across sources",
   "quality.flag.orphan_answer": "Orphan answer",
   "quality.flag.source_no_questions": "Source with no questions",
+
+  "topicDiagnostics.navTitle": "Metadata diagnostics",
+  "topicDiagnostics.navDescription":
+    "Inspect block, topic, exam, year, and source values before creating readable labels.",
+  "topicDiagnostics.backToMore": "Back to More",
+  "topicDiagnostics.eyebrow": "Diagnostics",
+  "topicDiagnostics.title": "Topic metadata",
+  "topicDiagnostics.description":
+    "Aggregated values from {count} imported questions. This page does not modify labels or questions.",
+  "topicDiagnostics.copyCsv": "Copy CSV",
+  "topicDiagnostics.copied": "Copied",
+  "topicDiagnostics.count": "Questions",
+  "topicDiagnostics.block": "Block",
+  "topicDiagnostics.topic": "Topic",
+  "topicDiagnostics.exam": "Exam",
+  "topicDiagnostics.year": "Year",
+  "topicDiagnostics.sourceTitle": "Source title",
+  "topicDiagnostics.sourceType": "Source type",
+  "topicDiagnostics.examples": "Examples",
+  "topicDiagnostics.blocksTitle": "Most frequent block values",
+  "topicDiagnostics.blocksDescription":
+    "Actual values stored in questions.block.",
+  "topicDiagnostics.topicsTitle": "Most frequent topic values",
+  "topicDiagnostics.topicsDescription":
+    "Actual values stored in questions.topic.",
+  "topicDiagnostics.blockTopicTitle": "Block + topic combinations",
+  "topicDiagnostics.blockTopicDescription":
+    "Frequency of block/topic pairs to distinguish codes like A1, A2, B2, or Tema 59.",
+  "topicDiagnostics.examsTitle": "Most frequent exam values",
+  "topicDiagnostics.yearsTitle": "Most frequent year values",
+  "topicDiagnostics.sourceTitlesTitle": "Most frequent source titles",
+  "topicDiagnostics.sourceTypesTitle": "Most frequent source types",
+  "topicDiagnostics.examplesTitle": "Examples by combination",
+  "topicDiagnostics.examplesDescription":
+    "Grouped by block, topic, exam, year, source title, and source type, with three example texts per row.",
 
   "export.eyebrow": "Export",
   "export.title": "Markdown exports",
