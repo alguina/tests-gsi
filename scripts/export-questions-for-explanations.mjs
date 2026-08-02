@@ -66,31 +66,60 @@ async function main() {
   }
 
   const exclude = new Set(explainedIds.map((row) => row.question_id));
-  const questions = await fetchJson(
-    `${base}/rest/v1/questions?select=id,text,block,topic,year,exam,answers(letter,text,is_correct)&is_active=eq.true&order=created_at.asc&limit=${Math.max(LIMIT * 4, 100)}`,
-    key,
-  );
 
-  const queue = questions
-    .filter((question) => !exclude.has(question.id))
-    .slice(0, LIMIT)
-    .map((question) => ({
-      questionId: question.id,
-      text: question.text,
-      block: question.block,
-      topic: question.topic,
-      year: question.year,
-      exam: question.exam,
-      answers: question.answers,
-      correctLetter:
-        question.answers?.find((answer) => answer.is_correct)?.letter ?? null,
-    }));
+  // Also skip IDs already present in local seed SQL (useful before remote seed).
+  const seedDir = path.join(ROOT, "supabase");
+  const seedFiles = (await fs.readdir(seedDir)).filter((name) =>
+    name.startsWith("seed-question-explanations"),
+  );
+  for (const name of seedFiles) {
+    const text = await fs.readFile(path.join(seedDir, name), "utf8");
+    for (const match of text.matchAll(/'([0-9a-f-]{36})'/gi)) {
+      exclude.add(match[1]);
+    }
+  }
+
+  const pageSize = 1000;
+  const queue = [];
+  let offset = 0;
+
+  while (queue.length < LIMIT) {
+    const questions = await fetchJson(
+      `${base}/rest/v1/questions?select=id,text,block,topic,year,exam,answers(letter,text,is_correct)&is_active=eq.true&order=created_at.asc&limit=${pageSize}&offset=${offset}`,
+      key,
+    );
+
+    if (!Array.isArray(questions) || questions.length === 0) {
+      break;
+    }
+
+    for (const question of questions) {
+      if (exclude.has(question.id)) continue;
+      queue.push({
+        questionId: question.id,
+        text: question.text,
+        block: question.block,
+        topic: question.topic,
+        year: question.year,
+        exam: question.exam,
+        answers: question.answers,
+        correctLetter:
+          question.answers?.find((answer) => answer.is_correct)?.letter ?? null,
+      });
+      if (queue.length >= LIMIT) break;
+    }
+
+    offset += questions.length;
+    if (questions.length < pageSize) break;
+  }
 
   const outDir = path.join(ROOT, "data");
   await fs.mkdir(outDir, { recursive: true });
   const outPath = path.join(outDir, "explanation-queue.json");
   await fs.writeFile(outPath, `${JSON.stringify(queue, null, 2)}\n`, "utf8");
-  console.log(`Wrote ${queue.length} questions -> ${path.relative(ROOT, outPath)}`);
+  console.log(
+    `Wrote ${queue.length} questions -> ${path.relative(ROOT, outPath)} (excluded ${exclude.size} already seeded/remote)`,
+  );
 }
 
 main().catch((error) => {
