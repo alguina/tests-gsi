@@ -6,6 +6,7 @@ import {
   loadInProgressSession,
   resumeTest,
   saveTestDraftAction,
+  startExplainedQuestionsTest,
   startFailedQuestionsTest,
   startRandomTest,
   startRecommendedTest,
@@ -42,7 +43,7 @@ type TestPhase = "setup" | "taking" | "results";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export type TestAutoStart = {
-  mode: "random" | "failed" | "topic" | "recommended";
+  mode: "random" | "failed" | "topic" | "recommended" | "explained";
   count: number | "all";
   topic?: string;
   filter?: TopicQuestionFilter;
@@ -207,6 +208,8 @@ export function TestPageContent({
 
         if (config.mode === "failed") {
           started = await startFailedQuestionsTest(config.count, profileId);
+        } else if (config.mode === "explained") {
+          started = await startExplainedQuestionsTest(config.count, profileId);
         } else if (config.mode === "recommended") {
           if (typeof config.count !== "number") {
             setLoadError(mapTestErrorCode("INVALID_QUESTION_COUNT", t));

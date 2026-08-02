@@ -143,6 +143,22 @@ create table if not exists question_notes (
 create index if not exists question_notes_user_id_idx
   on question_notes (user_id);
 
+create table if not exists question_explanations (
+  question_id uuid primary key references questions(id) on delete cascade,
+  explanation text not null,
+  why_correct text,
+  why_others text,
+  sources jsonb not null default '[]'::jsonb,
+  status text not null default 'draft'
+    check (status in ('draft', 'reviewed', 'needs_update')),
+  generated_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists question_explanations_status_idx
+  on question_explanations (status);
+
 create table if not exists session_questions (
   id uuid primary key default gen_random_uuid(),
   session_id uuid not null references test_sessions(id) on delete cascade,
@@ -220,6 +236,7 @@ alter table public.test_sessions disable row level security;
 alter table public.attempts disable row level security;
 alter table public.question_bookmarks disable row level security;
 alter table public.question_notes disable row level security;
+alter table public.question_explanations disable row level security;
 alter table public.session_questions disable row level security;
 alter table public.question_quality_flags disable row level security;
 
@@ -232,6 +249,8 @@ grant select, insert, update, delete on public.test_sessions to anon, authentica
 grant select, insert, update, delete on public.attempts to anon, authenticated;
 grant select, insert, update, delete on public.question_bookmarks to anon, authenticated;
 grant select, insert, update, delete on public.question_notes to anon, authenticated;
+grant select on public.question_explanations to anon, authenticated;
+grant insert, update, delete on public.question_explanations to anon, authenticated;
 grant select, insert, update, delete on public.session_questions to anon, authenticated;
 grant select, insert, update, delete on public.question_quality_flags to anon, authenticated;
 grant execute on function public.get_random_questions(integer) to anon, authenticated;

@@ -5,16 +5,22 @@ import {
   type TestDraftState,
   type TopicQuestionFilter,
 } from "@/lib/testDraft";
+import {
+  countExplainedQuestions,
+  selectExplainedQuestionIds,
+} from "@/lib/questionExplanations";
 import { logServerEvent } from "@/lib/server/logger";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const TEST_QUESTION_COUNTS = [10, 25, 50, 100] as const;
 export const FAILED_QUESTION_COUNTS = [10, 25, "all"] as const;
 export const TOPIC_QUESTION_COUNTS = [10, 25, 50, "all"] as const;
+export const EXPLAINED_QUESTION_COUNTS = [5, 8, 10, "all"] as const;
 export const TEST_MODE_RANDOM = "random" as const;
 export const TEST_MODE_FAILED = "failed_questions" as const;
 export const TEST_MODE_TOPIC = "topic" as const;
 export const TEST_MODE_RECOMMENDED = "recommended" as const;
+export const TEST_MODE_EXPLAINED = "explained" as const;
 export const TEST_MODE_EXAM = "exam_simulation" as const;
 
 export const EXAM_QUESTION_COUNTS = [50, 100] as const;
@@ -424,6 +430,67 @@ function resolveQuestionLimit(
 export async function countFailedQuestions(userId: string): Promise<number> {
   const ids = await selectFailedQuestionIds(userId, MAX_ALL_QUESTIONS_CAP);
   return ids.length;
+}
+
+export async function countExplainedQuestionsAvailable(): Promise<number> {
+  return countExplainedQuestions();
+}
+
+export async function startExplainedQuestionsSession(
+  requested: number | "all",
+  userId: string = DEFAULT_USER_ID,
+): Promise<StartedTestSession> {
+  const available = await countExplainedQuestions();
+
+  if (!available) {
+    throw new Error("NO_EXPLAINED_QUESTIONS");
+  }
+
+  const limit = resolveQuestionLimit(requested, available);
+  const questionIds = await selectExplainedQuestionIds(limit);
+
+  if (!questionIds.length) {
+    throw new Error("NO_EXPLAINED_QUESTIONS");
+  }
+
+  const questions = await fetchTestQuestionsByIds(questionIds);
+
+  if (!questions.length) {
+    throw new Error("NO_EXPLAINED_QUESTIONS");
+  }
+
+  const supabase = createServerSupabaseClient();
+  const draft = createInitialDraftState(questions.map((question) => question.id));
+  const title = `Explained questions (${questions.length})`;
+
+  const { data: session, error: sessionError } = await supabase
+    .from("test_sessions")
+    .insert({
+      user_id: userId,
+      mode: TEST_MODE_EXPLAINED,
+      title,
+      total_questions: questions.length,
+      correct_count: 0,
+      wrong_count: 0,
+      blank_count: 0,
+      net_score: 0,
+      draft_state: draft,
+    })
+    .select("id")
+    .single();
+
+  if (sessionError || !session) {
+    throw new Error(
+      `Failed to create test session: ${sessionError?.message ?? "Unknown error"}`,
+    );
+  }
+
+  return {
+    sessionId: session.id,
+    questions,
+    mode: TEST_MODE_EXPLAINED,
+    title,
+  };
 }
 
 export async function selectFailedQuestionIds(

@@ -32,6 +32,10 @@ export function mapTestErrorCode(code: string, t: TranslateFn): string {
     return t("test.noFailedQuestions");
   }
 
+  if (code === "NO_EXPLAINED_QUESTIONS") {
+    return t("test.noExplainedQuestions");
+  }
+
   if (code === "NO_TOPIC_QUESTIONS") {
     return t("test.noTopicQuestions");
   }

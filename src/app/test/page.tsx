@@ -2,6 +2,7 @@ import { TestPageContent } from "@/components/pages/TestPageContent";
 import type { TopicQuestionFilter } from "@/lib/testDraft";
 import { RECOMMENDED_DEFAULT_COUNT } from "@/lib/recommendations/constants";
 import {
+  EXPLAINED_QUESTION_COUNTS,
   FAILED_QUESTION_COUNTS,
   TEST_QUESTION_COUNTS,
   TOPIC_QUESTION_COUNTS,
@@ -58,6 +59,18 @@ export default async function TestPage({ searchParams }: TestPageProps) {
       return (
         <TestPageContent
           autoStart={{ mode: "failed", count }}
+        />
+      );
+    }
+  }
+
+  if (mode === "explained") {
+    const count = parseCount(params.count, EXPLAINED_QUESTION_COUNTS);
+
+    if (count !== undefined) {
+      return (
+        <TestPageContent
+          autoStart={{ mode: "explained", count }}
         />
       );
     }

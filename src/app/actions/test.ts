@@ -15,9 +15,14 @@ import {
   type QuestionBookmarkMap,
   type QuestionNoteMap,
 } from "@/lib/questionReview";
+import {
+  getQuestionExplanations,
+  type QuestionExplanationMap,
+} from "@/lib/questionExplanations";
 import { PROFILE_COOKIE_NAME } from "@/lib/profile/profileStore";
 import type { TestDraftState, TopicQuestionFilter } from "@/lib/testDraft";
 import {
+  countExplainedQuestionsAvailable,
   countFailedQuestions,
   discardTestSession,
   getExamSessionResult,
@@ -26,6 +31,7 @@ import {
   resumeTestSession,
   saveTestDraft,
   startExamSimulationSession,
+  startExplainedQuestionsSession,
   startFailedQuestionsSession,
   startRandomTestSession,
   startRecommendedTestSession,
@@ -71,6 +77,19 @@ export async function startFailedQuestionsTest(
   try {
     const resolvedUserId = await resolveUserId(userId);
     const data = await startFailedQuestionsSession(count, resolvedUserId);
+    return actionOk(data);
+  } catch (error) {
+    return toActionError(error);
+  }
+}
+
+export async function startExplainedQuestionsTest(
+  count: number | "all",
+  userId?: string,
+): Promise<ActionResult<StartedTestSession>> {
+  try {
+    const resolvedUserId = await resolveUserId(userId);
+    const data = await startExplainedQuestionsSession(count, resolvedUserId);
     return actionOk(data);
   } catch (error) {
     return toActionError(error);
@@ -202,6 +221,14 @@ export async function loadFailedQuestionsCount(
   }
 }
 
+export async function loadExplainedQuestionsCount(): Promise<number> {
+  try {
+    return await countExplainedQuestionsAvailable();
+  } catch {
+    return 0;
+  }
+}
+
 export async function submitTest(
   sessionId: string,
   questions: TestQuestion[],
@@ -261,6 +288,16 @@ export async function loadQuestionReviewState(
   ]);
 
   return { bookmarks, notes };
+}
+
+export async function loadQuestionExplanationsAction(
+  questionIds: string[],
+): Promise<QuestionExplanationMap> {
+  try {
+    return await getQuestionExplanations(questionIds);
+  } catch {
+    return {};
+  }
 }
 
 export async function toggleBookmarkAction(

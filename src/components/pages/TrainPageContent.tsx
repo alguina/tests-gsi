@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { loadFailedQuestionsCount, loadStudyRecommendation } from "@/app/actions/test";
+import { loadExplainedQuestionsCount, loadFailedQuestionsCount, loadStudyRecommendation } from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useProfile } from "@/components/profile/ProfileProvider";
 import {
@@ -25,6 +25,7 @@ import {
   EXAM_DEFAULT_TIME_LIMIT_SECONDS,
   EXAM_QUESTION_COUNTS,
   EXAM_TIME_LIMITS_MINUTES,
+  EXPLAINED_QUESTION_COUNTS,
   FAILED_QUESTION_COUNTS,
   TEST_QUESTION_COUNTS,
   TOPIC_QUESTION_COUNTS,
@@ -36,6 +37,7 @@ const TRAIN_TABS = [
   "random",
   "recommended",
   "mistakes",
+  "explained",
   "topic",
   "simulation",
 ] as const;
@@ -67,9 +69,13 @@ export function TrainPageContent({
   );
   const [selectedCount, setSelectedCount] = useState<number>(10);
   const [failedCount, setFailedCount] = useState<number | null>(null);
+  const [explainedCount, setExplainedCount] = useState<number | null>(null);
   const [selectedFailedCount, setSelectedFailedCount] = useState<number | "all">(
     10,
   );
+  const [selectedExplainedCount, setSelectedExplainedCount] = useState<
+    number | "all"
+  >(8);
   const [recommendedCount, setRecommendedCount] = useState<number>(
     RECOMMENDED_DEFAULT_COUNT,
   );
@@ -101,6 +107,7 @@ export function TrainPageContent({
       { id: "random", label: t("training.random") },
       { id: "recommended", label: t("training.recommended") },
       { id: "mistakes", label: t("training.mistakes") },
+      { id: "explained", label: t("training.explained") },
       { id: "topic", label: t("training.byTopic") },
       { id: "simulation", label: t("training.simulation") },
     ],
@@ -121,6 +128,7 @@ export function TrainPageContent({
 
   useEffect(() => {
     void loadFailedQuestionsCount(profile?.id).then(setFailedCount);
+    void loadExplainedQuestionsCount().then(setExplainedCount);
     void loadStudyRecommendation(profile?.id, RECOMMENDED_DEFAULT_COUNT).then(
       (value) => {
         setRecommendation(value);
@@ -146,6 +154,10 @@ export function TrainPageContent({
 
   function handleStartFailedTest() {
     router.push(`/test?mode=failed&count=${selectedFailedCount}`);
+  }
+
+  function handleStartExplainedTest() {
+    router.push(`/test?mode=explained&count=${selectedExplainedCount}`);
   }
 
   function handleStartRecommendedTest() {
@@ -278,6 +290,47 @@ export function TrainPageContent({
             failedCount !== null && failedCount > 0 ? (
               <Button onClick={handleStartFailedTest}>
                 {t("training.startMistakes")}
+              </Button>
+            ) : undefined
+          }
+        />
+      </TabPanel>
+
+      <TabPanel
+        id="explained"
+        labelledBy="tab-explained"
+        hidden={activeTab !== "explained"}
+      >
+        <TrainingModePanel
+          title={t("training.explainedTitle")}
+          description={t("training.explainedDescription")}
+          helperText={
+            explainedCount !== null && explainedCount > 0
+              ? t("training.explainedAvailable", { count: explainedCount })
+              : undefined
+          }
+          emptyState={
+            explainedCount === 0
+              ? {
+                  title: t("test.noExplainedQuestions"),
+                  description: t("training.explainedEmptyDescription"),
+                }
+              : undefined
+          }
+          controls={
+            explainedCount !== null && explainedCount > 0 ? (
+              <QuestionCountSelector
+                label={t("test.numberOfQuestions")}
+                options={EXPLAINED_QUESTION_COUNTS}
+                value={selectedExplainedCount}
+                onChange={setSelectedExplainedCount}
+              />
+            ) : undefined
+          }
+          action={
+            explainedCount !== null && explainedCount > 0 ? (
+              <Button onClick={handleStartExplainedTest}>
+                {t("training.startExplained")}
               </Button>
             ) : undefined
           }

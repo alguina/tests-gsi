@@ -29,6 +29,7 @@ export const en: Dictionary = {
   "training.recommendedBadge": "Suggested",
   "training.otherTests": "Other tests",
   "training.mistakes": "Mistakes",
+  "training.explained": "With explanation",
   "training.byTopic": "By topic",
   "training.simulation": "Simulation",
   "training.randomTitle": "Random test",
@@ -40,6 +41,12 @@ export const en: Dictionary = {
   "training.mistakesTitle": "Review mistakes",
   "training.mistakesDescription":
     "Practice questions you have answered incorrectly.",
+  "training.explainedTitle": "Questions with explanation",
+  "training.explainedDescription":
+    "Practice only questions that already have a stored explanation. After grading you can open “View explanation”.",
+  "training.explainedAvailable": "{count} explained questions available.",
+  "training.explainedEmptyDescription":
+    "No explanations loaded yet. Run the migration and seed in Supabase.",
   "training.byTopicTitle": "Train by topic",
   "training.byTopicDescription":
     "Pick a specific topic to practice.",
@@ -49,6 +56,7 @@ export const en: Dictionary = {
   "training.startRandom": "Start random test",
   "training.startRecommended": "Start recommended",
   "training.startMistakes": "Review mistakes",
+  "training.startExplained": "Start with explanations",
   "training.startByTopic": "Train topic",
   "training.startSimulation": "Start simulation",
 
@@ -552,9 +560,15 @@ export const en: Dictionary = {
   "test.removeFromReview": "Remove from review",
   "test.addNote": "Add note",
   "test.editNote": "Edit note",
+  "test.viewExplanation": "View explanation",
+  "test.whyCorrect": "Why it is correct:",
+  "test.whyOthers": "Why not the others:",
+  "test.explanationDisclaimer":
+    "Orientative explanation. Always cross-check with the official rule.",
   "test.saveNote": "Save note",
   "test.notePlaceholder": "Write a personal note…",
   "test.noFailedQuestions": "You have no failed questions to review.",
+  "test.noExplainedQuestions": "There are no questions with a stored explanation yet.",
   "test.noTopicQuestions": "No questions available for this topic and filter.",
   "test.noIncompleteSession": "There is no test in progress.",
   "test.activeSessionPrompt":

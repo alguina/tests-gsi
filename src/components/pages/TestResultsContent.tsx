@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  loadQuestionExplanationsAction,
   loadQuestionReviewState,
   saveNoteAction,
   toggleBookmarkAction,
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/Input";
 import { SelectableOption } from "@/components/ui/SelectableOption";
 import { StatCard } from "@/components/ui/StatCard";
 import { useI18n } from "@/lib/i18n/useI18n";
+import type { QuestionExplanation } from "@/lib/questionExplanations";
 import { normalizeNetScoreTo100 } from "@/lib/stats/userMetrics";
 import { cn } from "@/lib/ui/cn";
 import { typography } from "@/lib/ui/tokens";
@@ -40,6 +42,9 @@ export function TestResultsContent({
   const [bookmarks, setBookmarks] = useState<Record<string, true>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [draftNotes, setDraftNotes] = useState<Record<string, string>>({});
+  const [explanations, setExplanations] = useState<
+    Record<string, QuestionExplanation>
+  >({});
 
   const questionIds = useMemo(
     () => result.questions.map((question) => question.questionId),
@@ -59,6 +64,7 @@ export function TestResultsContent({
       setNotes(state.notes);
       setDraftNotes(state.notes);
     });
+    void loadQuestionExplanationsAction(questionIds).then(setExplanations);
   }, [profile?.id, questionIds]);
 
   const filteredQuestions = useMemo(() => {
@@ -210,6 +216,7 @@ export function TestResultsContent({
               bookmarked={Boolean(bookmarks[question.questionId])}
               note={notes[question.questionId] ?? ""}
               draftNote={draftNotes[question.questionId] ?? ""}
+              explanation={explanations[question.questionId] ?? null}
               onToggleBookmark={() =>
                 void handleToggleBookmark(question.questionId)
               }
@@ -244,6 +251,7 @@ function QuestionCorrectionCard({
   bookmarked,
   note,
   draftNote,
+  explanation,
   onToggleBookmark,
   onDraftNoteChange,
   onSaveNote,
@@ -253,12 +261,14 @@ function QuestionCorrectionCard({
   bookmarked: boolean;
   note: string;
   draftNote: string;
+  explanation: QuestionExplanation | null;
   onToggleBookmark: () => void;
   onDraftNoteChange: (value: string) => void;
   onSaveNote: () => void;
 }) {
   const { t } = useI18n();
   const [isNoteOpen, setIsNoteOpen] = useState(false);
+  const [isExplanationOpen, setIsExplanationOpen] = useState(false);
 
   const myAnswerDisplay = formatAnswerLine(
     question,
@@ -328,7 +338,62 @@ function QuestionCorrectionCard({
           >
             {note ? t("test.editNote") : t("test.addNote")}
           </Button>
+          {explanation ? (
+            <Button
+              variant="subtle"
+              size="sm"
+              aria-expanded={isExplanationOpen}
+              onClick={() => setIsExplanationOpen((current) => !current)}
+            >
+              {t("test.viewExplanation")}
+            </Button>
+          ) : null}
         </div>
+
+        {isExplanationOpen && explanation ? (
+          <div className="space-y-2 rounded-md border border-border-subtle bg-surface-muted/60 p-3">
+            <p className="text-sm leading-6 text-text-primary">
+              {explanation.explanation}
+            </p>
+            {explanation.whyCorrect ? (
+              <p className="text-sm leading-6 text-text-secondary">
+                <span className="font-medium text-text-primary">
+                  {t("test.whyCorrect")}{" "}
+                </span>
+                {explanation.whyCorrect}
+              </p>
+            ) : null}
+            {explanation.whyOthers ? (
+              <p className="text-sm leading-6 text-text-secondary">
+                <span className="font-medium text-text-primary">
+                  {t("test.whyOthers")}{" "}
+                </span>
+                {explanation.whyOthers}
+              </p>
+            ) : null}
+            {explanation.sources.length ? (
+              <ul className="space-y-1 pt-1">
+                {explanation.sources.map((source) => (
+                  <li key={`${source.title}-${source.url ?? ""}`} className={typography.meta}>
+                    {source.url ? (
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline decoration-border underline-offset-2 hover:text-text-secondary"
+                      >
+                        {source.title}
+                      </a>
+                    ) : (
+                      source.title
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <p className={typography.meta}>{t("test.explanationDisclaimer")}</p>
+          </div>
+        ) : null}
 
         {isNoteOpen ? (
           <div className="space-y-2 pt-1">

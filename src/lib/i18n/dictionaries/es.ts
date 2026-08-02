@@ -29,6 +29,7 @@ export const es: Dictionary = {
   "training.recommendedBadge": "Sugerido",
   "training.otherTests": "Otros tests",
   "training.mistakes": "Fallos",
+  "training.explained": "Con explicación",
   "training.byTopic": "Por tema",
   "training.simulation": "Simulación",
   "training.randomTitle": "Test aleatorio",
@@ -40,6 +41,12 @@ export const es: Dictionary = {
   "training.mistakesTitle": "Repasar fallos",
   "training.mistakesDescription":
     "Vuelve a practicar preguntas que has fallado.",
+  "training.explainedTitle": "Preguntas con explicación",
+  "training.explainedDescription":
+    "Practica solo preguntas que ya tienen una explicación guardada. Al corregir podrás abrir “Ver explicación”.",
+  "training.explainedAvailable": "{count} preguntas disponibles con explicación.",
+  "training.explainedEmptyDescription":
+    "Aún no hay explicaciones cargadas. Ejecuta la migración y el seed en Supabase.",
   "training.byTopicTitle": "Entrenar por tema",
   "training.byTopicDescription":
     "Elige un tema concreto para practicar.",
@@ -49,6 +56,7 @@ export const es: Dictionary = {
   "training.startRandom": "Empezar test aleatorio",
   "training.startRecommended": "Empezar recomendado",
   "training.startMistakes": "Repasar fallos",
+  "training.startExplained": "Empezar con explicación",
   "training.startByTopic": "Entrenar tema",
   "training.startSimulation": "Iniciar simulación",
 
@@ -552,9 +560,15 @@ export const es: Dictionary = {
   "test.removeFromReview": "Quitar de repaso",
   "test.addNote": "Añadir nota",
   "test.editNote": "Editar nota",
+  "test.viewExplanation": "Ver explicación",
+  "test.whyCorrect": "Por qué es correcta:",
+  "test.whyOthers": "Por qué no las demás:",
+  "test.explanationDisclaimer":
+    "Explicación orientativa. Contrasta siempre con la norma oficial.",
   "test.saveNote": "Guardar nota",
   "test.notePlaceholder": "Escribe una nota personal…",
   "test.noFailedQuestions": "No tienes preguntas falladas para repasar.",
+  "test.noExplainedQuestions": "Aún no hay preguntas con explicación guardada.",
   "test.noTopicQuestions": "No hay preguntas disponibles para este tema y filtro.",
   "test.noIncompleteSession": "No hay ningún test en curso.",
   "test.activeSessionPrompt":
