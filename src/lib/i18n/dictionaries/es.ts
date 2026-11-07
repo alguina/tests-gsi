@@ -86,6 +86,26 @@ export const es: Dictionary = {
   "progressSection.bookmarks": "Preguntas marcadas",
   "progressSection.bookmarksDescription":
     "Exporta o repasa las preguntas que guardaste.",
+  "nav.officialSyllabus": "Temario oficial",
+  "progressSection.officialSyllabusDescription":
+    "Cobertura del banco por tema oficial del BOE (propuesta automática en revisión).",
+  "officialSyllabus.eyebrow": "Propuesta en revisión",
+  "officialSyllabus.title": "Temario oficial (BOE)",
+  "officialSyllabus.description":
+    "Cobertura del banco de preguntas por tema oficial del GSI A2 (Anexo IX, BOE-A-2025-26262). Asignación automática pendiente de revisión: no cambia los temas actuales ni tus métricas.",
+  "officialSyllabus.banner":
+    "Propuesta automática sin revisar. Solo la confianza alta es orientativa; media y baja requieren revisión antes de usarse.",
+  "officialSyllabus.block": "Bloque {bloque}",
+  "officialSyllabus.questions": "{count} preguntas",
+  "officialSyllabus.confidence.alta": "alta",
+  "officialSyllabus.confidence.media": "media",
+  "officialSyllabus.confidence.baja": "baja",
+  "officialSyllabus.confidence.sinAsignar": "sin asignar",
+  "officialSyllabus.bank.title": "Cobertura del banco",
+  "officialSyllabus.bank.distinct": "{count} preguntas distintas",
+  "officialSyllabus.bank.idCoverage":
+    "El mapa cubre 77.919 de 77.961 filas (42 huérfanas por erratas del enunciado). Las 1.492 «sin asignar» son preguntas distintas con similitud semántica insuficiente: pendientes de revisión, no cuentan en ningún tema.",
+
 
   "moreSection.eyebrow": "Más opciones",
   "moreSection.description":
@@ -637,3 +657,4 @@ export const es: Dictionary = {
   "common.start": "Empezar",
   "common.emptyState": "Sin datos",
 };
+
