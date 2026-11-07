@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { Select } from "@/components/ui/Select";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -23,6 +25,7 @@ type Props = {
 
 export function TemarioOficialPageContent({ cobertura }: Props) {
   const { t } = useI18n();
+  const [questionCount, setQuestionCount] = useState(10);
   const bloques = ["I", "II", "III", "IV"];
   const totales = { alta: 0, media: 0, baja: 0, sin_asignar: cobertura.sinAsignar };
   let distintas = cobertura.sinAsignar;
@@ -71,6 +74,14 @@ export function TemarioOficialPageContent({ cobertura }: Props) {
         </p>
       </section>
 
+      <Card as="section" className="mb-6">
+        <label htmlFor="official-test-count" className="mb-2 block text-sm font-medium text-text-primary">{t("officialSyllabus.testCount")}</label>
+        <Select id="official-test-count" value={questionCount} onChange={(event) => setQuestionCount(Number(event.target.value))}>
+          {[10, 25, 50].map((count) => <option key={count} value={count}>{t("test.questionsCount", { count })}</option>)}
+        </Select>
+        <p className="mt-2 text-xs text-text-secondary">{t("officialSyllabus.testCountHelp")}</p>
+      </Card>
+
       {bloques.map((bloque) => (
         <section key={bloque} className="mb-6">
           <h2 className="mb-2 text-base font-medium tracking-tight text-text-primary">
@@ -96,8 +107,8 @@ export function TemarioOficialPageContent({ cobertura }: Props) {
                     ).join(" · ")}
                   </p>
                   {c.porConfianza.alta > 0 && (
-                    <Link className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium text-text-primary hover:bg-surface-muted focus-visible:outline-2" href={`/test?mode=official-topic&topic=${c.tema.bloque}.${c.tema.tema}&count=10`}>
-                      {t("officialSyllabus.startTest", { count: Math.min(10, c.porConfianza.alta) })}
+                    <Link className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium text-text-primary hover:bg-surface-muted focus-visible:outline-2" href={`/test?mode=official-topic&topic=${c.tema.bloque}.${c.tema.tema}&count=${questionCount}`}>
+                      {t("officialSyllabus.startTest", { count: Math.min(questionCount, c.porConfianza.alta) })}
                     </Link>
                   )}
                   {c.porConfianza.alta === 0 && <p className="mt-2 text-xs text-text-muted">{t("officialSyllabus.noHighQuestions")}</p>}

@@ -37,8 +37,14 @@ describe("startOfficialTopicTestSession", () => {
     expect(state.inserted?.user_id).toBe("test-profile");
     expect(state.inserted?.total_questions).toBe(10);
   });
+  it.each([25, 50])("supports %i distinct questions when the pool is large enough", async (count) => {
+    const test = await startOfficialTopicTestSession("I.1", count, "test-profile");
+    expect(test.questions).toHaveLength(count);
+    expect(new Set(test.questions.map((q) => q.id)).size).toBe(count);
+    expect(test.questions.every((q) => getOfficialTopic(q.id)?.confianza === "alta")).toBe(true);
+  });
   it("uses available questions when the topic has fewer than requested", async () => {
-    const test = await startOfficialTopicTestSession("III.8", 10, "test-profile");
+    const test = await startOfficialTopicTestSession("III.8", 25, "test-profile");
     expect(test.questions).toHaveLength(2);
     expect(state.inserted?.total_questions).toBe(2);
   });
