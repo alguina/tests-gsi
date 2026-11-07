@@ -12,6 +12,9 @@ export const en: Dictionary = {
 
   "officialSyllabus.noHighQuestions": "No high-confidence questions available for practice.",
 
+  "officialSyllabus.testCount": "Questions per topic test",
+  "officialSyllabus.testCountHelp": "Choose 10, 25 or 50. If a topic has fewer eligible questions, the available questions will be used. High confidence only, still provisional.",
+
   "app.title": "GSI A2 Study",
 
   "nav.home": "Home",

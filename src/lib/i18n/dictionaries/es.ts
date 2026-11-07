@@ -12,6 +12,9 @@ export const es: Dictionary = {
 
   "officialSyllabus.noHighQuestions": "Sin preguntas de confianza alta disponibles para practicar.",
 
+  "officialSyllabus.testCount": "Preguntas por test de tema",
+  "officialSyllabus.testCountHelp": "Elige 10, 25 o 50. Si un tema tiene menos preguntas elegibles, se usarán las disponibles. Solo confianza alta, todavía provisional.",
+
   "app.title": "GSI A2 Study",
 
   "nav.home": "Inicio",
