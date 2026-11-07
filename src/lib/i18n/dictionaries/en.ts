@@ -86,6 +86,38 @@ export const en: Dictionary = {
   "progressSection.bookmarks": "Bookmarked questions",
   "progressSection.bookmarksDescription":
     "Export or review questions you saved.",
+  "nav.officialSyllabus": "Official syllabus",
+  "progressSection.officialSyllabusDescription":
+    "Question bank coverage by official BOE topic (automatic proposal under review).",
+  "officialSyllabus.eyebrow": "Proposal under review",
+  "officialSyllabus.title": "Official syllabus (BOE)",
+  "officialSyllabus.description":
+    "Question bank coverage by official GSI A2 topic (Annex IX, BOE-A-2025-26262). Automatic assignment pending review: it does not change current topics or your metrics.",
+  "officialSyllabus.banner":
+    "Automatic proposal, not reviewed. Only high confidence is indicative; medium and low require review before use.",
+  "officialSyllabus.block": "Block {bloque}",
+  "officialSyllabus.questions": "{count} questions",
+  "officialSyllabus.confidence.alta": "high",
+  "officialSyllabus.confidence.media": "medium",
+  "officialSyllabus.confidence.baja": "low",
+  "officialSyllabus.confidence.sinAsignar": "unassigned",
+  "officialSyllabus.practice.title": "Your practice by official topic",
+  "officialSyllabus.practice.summary": "Recorded answers",
+  "officialSyllabus.practice.globalAccuracy": "Overall accuracy",
+  "officialSyllabus.practice.none":
+    "No recorded answers for this profile yet.",
+  "officialSyllabus.practice.blank": "Blank",
+  "officialSyllabus.practice.unmappedTitle": "No topic assigned",
+  "officialSyllabus.practice.verificationNote":
+    "Excludes the 30 answers from the 3 automated verification sessions of Nov 7 (still in your history). 'No topic assigned' = answers on questions with low confidence or unclassified mapping, not your mistakes.",
+  "officialSyllabus.bank.title": "Question bank coverage",
+  "officialSyllabus.bank.distinct": "{count} distinct questions",
+  "officialSyllabus.bank.rows": "{count} bank rows covered",
+  "officialSyllabus.bank.idCoverage":
+    "Technical coverage: 77,919 of 77,961 rows mapped (42 orphaned by stem typos). The 1,492 'unassigned' are distinct questions with insufficient semantic similarity: pending review, not coverage errors.",
+  "officialSyllabus.tema.practice": "practice: {answered} ans. · {accuracy}% correct",
+  "officialSyllabus.tema.noPractice": "no practice yet",
+
 
   "moreSection.eyebrow": "More",
   "moreSection.description":
@@ -637,3 +669,4 @@ export const en: Dictionary = {
   "common.start": "Start",
   "common.emptyState": "No data",
 };
+

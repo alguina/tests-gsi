@@ -1,0 +1,287 @@
+[
+ {
+  "bloque": "I",
+  "tema": 1,
+  "titulo": "La Constitución Española de 1978. Derechos y deberes fundamentales. Su garantía y suspensión. La Corona: funciones constitucionales del Rey."
+ },
+ {
+  "bloque": "I",
+  "tema": 2,
+  "titulo": "Las Cortes Generales: atribuciones del Congreso de los Diputados y del Senado. El Tribunal Constitucional: composición y atribuciones. El Defensor del Pueblo."
+ },
+ {
+  "bloque": "I",
+  "tema": 3,
+  "titulo": "El Gobierno: composición, nombramiento y cese. Las funciones del Gobierno. Relaciones entre el Gobierno y las Cortes Generales."
+ },
+ {
+  "bloque": "I",
+  "tema": 4,
+  "titulo": "La Ley 19/2013, de 9 de diciembre, de transparencia, acceso a la información pública y buen gobierno. La Agenda 2030 y los Objetivos de Desarrollo Sostenible."
+ },
+ {
+  "bloque": "I",
+  "tema": 5,
+  "titulo": "Políticas de igualdad y contra la violencia de género. Políticas de igualdad de trato y no discriminación de las personas LGTBI. Discapacidad y dependencia: régimen jurídico."
+ },
+ {
+  "bloque": "I",
+  "tema": 6,
+  "titulo": "La sociedad de la información. La Agenda Digital para España. Identidad y firma electrónica: régimen jurídico. Reglamento eIDAS. El DNI electrónico."
+ },
+ {
+  "bloque": "I",
+  "tema": 7,
+  "titulo": "La protección de datos personales y su régimen jurídico: principios, derechos, responsable y encargado del tratamiento, delegado y autoridades de protección de datos. Derechos digitales."
+ },
+ {
+  "bloque": "I",
+  "tema": 8,
+  "titulo": "Las Leyes de Procedimiento Administrativo Común de las Administraciones Públicas y de Régimen Jurídico del Sector Público. El texto refundido del Estatuto Básico del Empleo Público."
+ },
+ {
+  "bloque": "I",
+  "tema": 9,
+  "titulo": "Instrumentos para el acceso electrónico a las Administraciones públicas: sedes electrónicas, canales y punto de acceso, identificación y autenticación. Datos abiertos. Normativa vigente de reutilización de la información del sector público. La gestión electrónica de los procedimientos administrativos. Esquema Nacional de Seguridad (ENS). Esquema Nacional de Interoperabilidad (ENI). Normas técnicas de interoperabilidad. Guías CCN-STIC serie 800."
+ },
+ {
+  "bloque": "I",
+  "tema": 10,
+  "titulo": "Instrumentos y órganos para la cooperación entre Administraciones públicas en materia de Administración electrónica. Infraestructuras y servicios comunes. Plataformas de validación e interconexión de redes."
+ },
+ {
+  "bloque": "II",
+  "tema": 1,
+  "titulo": "Tecnologías actuales de ordenadores: de los dispositivos móviles a los superordenadores y arquitecturas escalables y de altas prestaciones. Computación en la nube. Base tecnológica. Componentes, funcionalidades y capacidades."
+ },
+ {
+  "bloque": "II",
+  "tema": 2,
+  "titulo": "Conceptos y fundamentos de los sistemas operativos. Características técnicas, funcionales y de administración: Windows, Linux, Unix y otros. Sistemas operativos para dispositivos móviles."
+ },
+ {
+  "bloque": "II",
+  "tema": 3,
+  "titulo": "Características técnicas de los lenguajes y paradigmas actuales de programación."
+ },
+ {
+  "bloque": "II",
+  "tema": 4,
+  "titulo": "Inteligencia de negocios: cuadros de mando integral, sistemas de soporte a las decisiones, sistemas de información ejecutiva y almacenes de datos. OLTP y OLAP."
+ },
+ {
+  "bloque": "II",
+  "tema": 5,
+  "titulo": "La arquitectura ANSI/SPARC. Sistemas de gestión de bases de datos relacionales. El lenguaje SQL. Normas y estándares para la interoperabilidad entre gestores de bases de datos relacionales."
+ },
+ {
+  "bloque": "II",
+  "tema": 6,
+  "titulo": "Arquitectura de sistemas cliente-servidor, multicapas y multidispositivo: tipología. Componentes. Interoperabilidad de componentes. Ventajas e inconvenientes. Arquitectura de servicios web."
+ },
+ {
+  "bloque": "II",
+  "tema": 7,
+  "titulo": "Modelo de desarrollo de aplicaciones basado en contenedores y microservicios. Arquitectura y soluciones. Despliegue, monitorización y escalado."
+ },
+ {
+  "bloque": "II",
+  "tema": 8,
+  "titulo": "El modelo TCP/IP y el modelo de referencia de interconexión de sistemas abiertos (OSI) de ISO: arquitectura, capas, interfaces , protocolos, direccionamiento y encaminamiento."
+ },
+ {
+  "bloque": "II",
+  "tema": 9,
+  "titulo": "Lenguajes de marca o etiqueta. Características y funcionalidades. SGML, HTML, XML y sus derivaciones. Lenguajes de script ."
+ },
+ {
+  "bloque": "II",
+  "tema": 10,
+  "titulo": "Análisis y gestión de riesgos de los sistemas de información. Herramientas."
+ },
+ {
+  "bloque": "II",
+  "tema": 11,
+  "titulo": "Auditoría Informática: objetivos, alcance y metodología. Técnicas y herramientas. Normas y estándares. Auditoría del ENS y de protección de datos. Auditoría de seguridad física."
+ },
+ {
+  "bloque": "II",
+  "tema": 12,
+  "titulo": "Gestión de la atención a clientes y usuarios: centros de contacto, CRM. Arquitectura multicanal. Sistemas de respuesta de voz interactiva (IVR). Voice XML."
+ },
+ {
+  "bloque": "II",
+  "tema": 13,
+  "titulo": "Seguridad física y lógica de un sistema de información. Herramientas en ciberseguridad. Gestión de incidentes. Informática forense."
+ },
+ {
+  "bloque": "II",
+  "tema": 14,
+  "titulo": "Software libre y software propietario. Características y tipos de licencias. La protección jurídica de los programas de ordenador. Tecnologías de protección de derechos digitales."
+ },
+ {
+  "bloque": "II",
+  "tema": 15,
+  "titulo": "Técnicas de evaluación de alternativas y análisis de viabilidad. Planificación, presupuestación y control de costes de un proyecto informático."
+ },
+ {
+  "bloque": "II",
+  "tema": 16,
+  "titulo": "Sistemas de gestión documental y de contenidos. Sindicación de contenido. Sistemas de gestión de flujos de trabajos. Búsqueda de información: robots, spiders, otros. Posicionamiento y buscadores (SEO). Herramientas de trabajo colaborativo y redes sociales."
+ },
+ {
+  "bloque": "III",
+  "tema": 1,
+  "titulo": "Concepto del ciclo de vida de los sistemas y fases. Modelos de ciclo de vida."
+ },
+ {
+  "bloque": "III",
+  "tema": 2,
+  "titulo": "Gestión y planificación del proceso de desarrollo. Técnicas y prácticas de gestión y planificación de proyectos. Metodologías de desarrollo."
+ },
+ {
+  "bloque": "III",
+  "tema": 3,
+  "titulo": "Estrategias de determinación de requerimientos: entrevistas, derivación de sistemas existentes, análisis y prototipos. La especificación de requisitos de software ."
+ },
+ {
+  "bloque": "III",
+  "tema": 4,
+  "titulo": "Modelado de datos y metodologías. Diseño de bases de datos. El modelo lógico relacional. Normalización. Diseño lógico y físico. Problemas de concurrencia de acceso. Mecanismos de resolución de conflictos."
+ },
+ {
+  "bloque": "III",
+  "tema": 5,
+  "titulo": "Tipos abstractos de datos y estructuras de datos. Organizaciones de ficheros. Estrategias de diseño de algoritmos. Tipos de algoritmos: ordenación y búsqueda. Fundamentos de Inteligencia Artificial, tecnologías asociadas y áreas de aplicación."
+ },
+ {
+  "bloque": "III",
+  "tema": 6,
+  "titulo": "Construcción del sistema. Entornos de construcción y generación de código. Despliegue de aplicaciones e integración continua. Dev-Ops. Estándares de documentación. Manuales de usuario y manuales técnicos. Formación de usuarios y personal técnico: métodos y materiales."
+ },
+ {
+  "bloque": "III",
+  "tema": 7,
+  "titulo": "Pruebas. Planificación y documentación. Utilización de datos de prueba. Pruebas de software , hardware , procedimientos y datos."
+ },
+ {
+  "bloque": "III",
+  "tema": 8,
+  "titulo": "Instalación y cambio. Estrategias de sustitución. Recepción e instalación. Evaluación post-implementación. Mantenimiento."
+ },
+ {
+  "bloque": "III",
+  "tema": 9,
+  "titulo": "Análisis y diseño orientado a objetos. Elementos. El proceso unificado de software . El lenguaje de modelado unificado (UML). Patrones de diseño."
+ },
+ {
+  "bloque": "III",
+  "tema": 10,
+  "titulo": "La arquitectura Java EE/Jakarta EE. Características de funcionamiento. Elementos constitutivos. Productos y herramientas. Persistencia. Seguridad."
+ },
+ {
+  "bloque": "III",
+  "tema": 11,
+  "titulo": "La plataforma.NET. Modelo de programación. Servicios. Herramientas. Persistencia. Seguridad."
+ },
+ {
+  "bloque": "III",
+  "tema": 12,
+  "titulo": "Aplicaciones web. Diseño web multiplataforma/multidispositivo. Desarrollo web front-end y en servidor. Componentes de tecnologías de programación. Servicios web: estándares, protocolos asociados, interoperabilidad y seguridad. Internacionalización y localización."
+ },
+ {
+  "bloque": "III",
+  "tema": 13,
+  "titulo": "La calidad del software y su medida. Modelos, métricas, normas y estándares."
+ },
+ {
+  "bloque": "III",
+  "tema": 14,
+  "titulo": "Accesibilidad, diseño universal y usabilidad. Accesibilidad y usabilidad de las tecnologías, productos y servicios relacionados con la sociedad de la información. Experiencia de Usuario o UX. La Guía de comunicación digital de la Administración del Estado."
+ },
+ {
+  "bloque": "III",
+  "tema": 15,
+  "titulo": "Minería de datos. Aplicación a la resolución de problemas de gestión. Tecnología y algoritmos. Procesamiento analítico en línea (OLAP). Big data. Entornos Hadoop o similares. Bases de datos NoSQL."
+ },
+ {
+  "bloque": "IV",
+  "tema": 1,
+  "titulo": "Administración del Sistema operativo y software de base."
+ },
+ {
+  "bloque": "IV",
+  "tema": 2,
+  "titulo": "Administración de sistemas de gestión de bases de datos."
+ },
+ {
+  "bloque": "IV",
+  "tema": 3,
+  "titulo": "Mantenimiento de equipos e instalaciones. Tipos de mantenimiento. Gestión de incidencias. Procedimientos de backup y recuperación."
+ },
+ {
+  "bloque": "IV",
+  "tema": 4,
+  "titulo": "Gestión de la configuración. Control de cambios y de versiones. Técnicas y herramientas de operación automática. Evaluación y monitorización del rendimiento de sistemas, infraestructuras y servicios. Gestión de la capacidad. Herramientas y técnicas utilizables."
+ },
+ {
+  "bloque": "IV",
+  "tema": 5,
+  "titulo": "Almacenamiento de datos: arquitectura, tipos, componentes, protocolos, gestión y administración. Virtualización del almacenamiento."
+ },
+ {
+  "bloque": "IV",
+  "tema": 6,
+  "titulo": "Planificación física y dimensionamiento de un centro de procesamiento de datos. Virtualización y consolidación de servidores y recursos. Vulnerabilidades, riesgo y protección. Sistemas de alta disponibilidad y balanceo de carga. Recuperación ante desastres."
+ },
+ {
+  "bloque": "IV",
+  "tema": 7,
+  "titulo": "Medios de transmisión guiados y no guiados (inalámbricos): tipos y parámetros significativos. Elementos de cableado estructurado."
+ },
+ {
+  "bloque": "IV",
+  "tema": 8,
+  "titulo": "Redes locales. Tipología, protocolos y técnicas de transmisión. Métodos de acceso. Dispositivos de interconexión. Seguridad. Normativa Reguladora."
+ },
+ {
+  "bloque": "IV",
+  "tema": 9,
+  "titulo": "Administración de redes locales. Gestión de usuarios y dispositivos. Monitorización y control de tráfico. Gestión SNMP."
+ },
+ {
+  "bloque": "IV",
+  "tema": 10,
+  "titulo": "Redes de área extensa. Tecnologías WDM y MPLS SD-WAN. Protocolos de encaminamiento."
+ },
+ {
+  "bloque": "IV",
+  "tema": 11,
+  "titulo": "Redes inalámbricas. Protocolos. Características funcionales y técnicas. Sistemas de expansión del espectro. Sistemas de acceso. Modos de operación. Seguridad. Normativa reguladora."
+ },
+ {
+  "bloque": "IV",
+  "tema": 12,
+  "titulo": "La seguridad en redes. Seguridad perimetral. Control de accesos. Técnicas criptográficas y protocolos seguros. Mecanismos de firma digital. Redes privadas virtuales. Seguridad en el puesto del usuario."
+ },
+ {
+  "bloque": "IV",
+  "tema": 13,
+  "titulo": "La red Internet: arquitectura de red. Principios de funcionamiento. Servicios: evolución, estado actual y perspectivas de futuro. Internet de las Cosas (IoT)."
+ },
+ {
+  "bloque": "IV",
+  "tema": 14,
+  "titulo": "Redes de nueva generación y servicios convergentes (NGN/IMS). VoIP, ToIP y comunicaciones unificadas. Convergencia telefonía fija-telefonía móvil."
+ },
+ {
+  "bloque": "IV",
+  "tema": 15,
+  "titulo": "Sistemas de comunicaciones móviles. Generaciones de tecnologías de telefonía móvil. Soluciones de gestión de dispositivos móviles (MDM, EMM, UEM)."
+ },
+ {
+  "bloque": "IV",
+  "tema": 16,
+  "titulo": "Sistemas de videoconferencia. Protocolos. Dimensionamiento y calidad de servicio en las comunicaciones y acondicionamiento de salas y equipos."
+ }
+]
