@@ -15,6 +15,17 @@ export const es: Dictionary = {
   "officialSyllabus.testCount": "Preguntas por test de tema",
   "officialSyllabus.testCountHelp": "Elige 10, 25 o 50. Si un tema tiene menos preguntas elegibles, se usarán las disponibles. Solo confianza alta, todavía provisional.",
 
+  "officialSyllabus.resultsTitle": "Resultados acumulados por tema",
+  "officialSyllabus.resultsPrivacy": "Esta vista usa el perfil activo, no una identidad autenticada. La app no exige iniciar sesión: los resultados no son privados.",
+  "officialSyllabus.resultsScope": "Solo se atribuyen a un tema las preguntas de confianza alta (provisional). Cobertura = preguntas distintas practicadas, sin contar copias importadas. Precisión = aciertos / respuestas no en blanco; no mide dominio del tema.",
+  "officialSyllabus.resultsQA": "El historial puede incluir pruebas técnicas. No se han borrado ni depurado sesiones automáticamente.",
+  "officialSyllabus.chooseProfile": "Elige un perfil para ver sus resultados.",
+  "officialSyllabus.resultsError": "No se pudieron cargar los resultados. Recarga la página para reintentar.",
+  "officialSyllabus.resultsPending": "{total} intentos en el historial. Fuera de los temas: {unassigned} sin asignación y {lower} de confianza media/baja.",
+  "officialSyllabus.resultsUnique": "Preguntas distintas practicadas: {seen} / {total} de confianza alta",
+  "officialSyllabus.resultsAttempts": "Intentos: {attempts} · Aciertos: {correct} · Fallos: {wrong} · Blancos: {blank}",
+  "officialSyllabus.resultsAccuracy": "Precisión (sin blancos): {accuracy}",
+
   "app.title": "GSI A2 Study",
 
   "nav.home": "Inicio",
