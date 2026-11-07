@@ -15,6 +15,17 @@ export const en: Dictionary = {
   "officialSyllabus.testCount": "Questions per topic test",
   "officialSyllabus.testCountHelp": "Choose 10, 25 or 50. If a topic has fewer eligible questions, the available questions will be used. High confidence only, still provisional.",
 
+  "officialSyllabus.resultsTitle": "Cumulative topic results",
+  "officialSyllabus.resultsPrivacy": "This view uses the active profile, not an authenticated identity. The app does not require sign-in: results are not private.",
+  "officialSyllabus.resultsScope": "Only high-confidence (provisional) questions are attributed to a topic. Coverage counts distinct questions practiced, without imported copies. Accuracy = correct / nonblank responses; it does not measure topic mastery.",
+  "officialSyllabus.resultsQA": "History may include technical tests. Sessions have not been deleted or automatically cleaned.",
+  "officialSyllabus.chooseProfile": "Choose a profile to see its results.",
+  "officialSyllabus.resultsError": "Results could not be loaded. Reload the page to retry.",
+  "officialSyllabus.resultsPending": "{total} attempts in history. Outside topics: {unassigned} unassigned and {lower} medium/low confidence.",
+  "officialSyllabus.resultsUnique": "Distinct questions practiced: {seen} / {total} high confidence",
+  "officialSyllabus.resultsAttempts": "Attempts: {attempts} · Correct: {correct} · Wrong: {wrong} · Blank: {blank}",
+  "officialSyllabus.resultsAccuracy": "Accuracy (excluding blanks): {accuracy}",
+
   "app.title": "GSI A2 Study",
 
   "nav.home": "Home",
