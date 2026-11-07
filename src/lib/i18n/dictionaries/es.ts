@@ -1,6 +1,17 @@
 import type { Dictionary } from "@/lib/i18n/types";
 
 export const es: Dictionary = {
+  "officialSyllabus.startTest": "Hacer test · hasta {count} de confianza alta",
+  "officialSyllabus.testTopic": "Tema BOE {topic} · clasificación provisional",
+  "officialSyllabus.testWarning": "Solo preguntas con asignación automática de confianza alta, aún sin revisión humana. Puede haber errores de tema. Se excluyen media, baja y sin asignar.",
+
+  "officialSyllabus.testTitle": "Test por tema oficial",
+  "officialSyllabus.testDescription": "Practica preguntas del tema seleccionado. El resultado se guarda en el perfil activo.",
+
+  "officialSyllabus.legacyTestWarning": "Asignación automática aún sin revisión humana. Puede haber errores de tema.",
+
+  "officialSyllabus.noHighQuestions": "Sin preguntas de confianza alta disponibles para practicar.",
+
   "app.title": "GSI A2 Study",
 
   "nav.home": "Inicio",

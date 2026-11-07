@@ -6,6 +6,8 @@ import temarioRaw from "../../data/gsi-temario-oficial.json";
 import {
   TEMARIO_OFICIAL,
   getOfficialCoverage,
+  getOfficialTopicQuestionIds,
+  findOfficialTopic,
   getOfficialTopic,
   isConfianzaFiable,
 } from "../officialTopics";
@@ -79,5 +81,29 @@ describe("officialTopics (mapeo propuesta v2)", () => {
     expect(isConfianzaFiable("media")).toBe(false);
     expect(isConfianzaFiable("baja")).toBe(false);
     expect(isConfianzaFiable("sin_asignar")).toBe(false);
+  });
+});
+
+
+describe("official topic test pool", () => {
+  it("matches coverage exactly, with no duplicate imports or unassigned questions", () => {
+    for (const c of getOfficialCoverage().temas) {
+      const key = `${c.tema.bloque}.${c.tema.tema}`;
+      const ids = getOfficialTopicQuestionIds(key);
+      expect(ids.length).toBe(c.porConfianza.alta);
+      expect(new Set(ids).size).toBe(ids.length);
+      for (const id of ids) {
+        const a = getOfficialTopic(id)!;
+        expect(["alta", "revisada"]).toContain(a.confianza);
+        expect(`${a.bloque}.${a.tema}`).toBe(key);
+      }
+      expect(findOfficialTopic(key)).toEqual(c.tema);
+    }
+  });
+  it("rejects unknown or tentative pseudo-topics", () => {
+    for (const key of ["", "V.1", "I.999", "sin_asignar", "I.1 OR true"]) {
+      expect(getOfficialTopicQuestionIds(key)).toEqual([]);
+      expect(findOfficialTopic(key)).toBeUndefined();
+    }
   });
 });

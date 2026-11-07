@@ -36,6 +36,7 @@ import {
   startRandomTestSession,
   startRecommendedTestSession,
   startTopicTestSession,
+  startOfficialTopicTestSession,
   submitTestSession,
   type ExamTestResult,
   type InProgressSession,
@@ -326,4 +327,11 @@ export async function saveNoteAction(
   } catch (error) {
     return toActionError(error);
   }
+}
+
+export async function startOfficialTopicTest(key: string, count: number, userId?: string): Promise<ActionResult<StartedTestSession>> {
+  try {
+    const data = await startOfficialTopicTestSession(key, count, await resolveUserId(userId));
+    return actionOk(data);
+  } catch (error) { return toActionError(error); }
 }

@@ -11,6 +11,7 @@ import {
   startRandomTest,
   startRecommendedTest,
   startTopicTest,
+  startOfficialTopicTest,
   submitTest,
 } from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -43,7 +44,7 @@ type TestPhase = "setup" | "taking" | "results";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export type TestAutoStart = {
-  mode: "random" | "failed" | "topic" | "recommended" | "explained";
+  mode: "random" | "failed" | "topic" | "recommended" | "explained" | "official-topic";
   count: number | "all";
   topic?: string;
   filter?: TopicQuestionFilter;
@@ -130,6 +131,7 @@ export function TestPageContent({
 
   const [phase, setPhase] = useState<TestPhase>("setup");
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [draftConfig, setDraftConfig] = useState<TestDraftState["config"]>();
   const [sessionMode, setSessionMode] = useState<string>("random");
   const [selectedCount, setSelectedCount] = useState<number>(
     typeof autoStart?.count === "number" ? autoStart.count : 10,
@@ -181,6 +183,7 @@ export function TestPageContent({
       },
     ) => {
       setSessionId(started.sessionId);
+      setDraftConfig(started.draft?.config);
       setSessionMode(started.mode ?? "random");
       setQuestions(started.questions);
       setResponses(started.draft?.responses ?? {});
@@ -206,7 +209,9 @@ export function TestPageContent({
       try {
         let started;
 
-        if (config.mode === "failed") {
+        if (config.mode === "official-topic" && config.topic && typeof config.count === "number") {
+          started = await startOfficialTopicTest(config.topic, config.count, profileId);
+        } else if (config.mode === "failed") {
           started = await startFailedQuestionsTest(config.count, profileId);
         } else if (config.mode === "explained") {
           started = await startExplainedQuestionsTest(config.count, profileId);
@@ -243,6 +248,7 @@ export function TestPageContent({
           sessionId: started.data.sessionId,
           questions: started.data.questions,
           mode: started.data.mode,
+          draft: started.data.draft,
         });
       } catch (startError) {
         setLoadError(mapTestError(startError, t));
@@ -330,22 +336,22 @@ export function TestPageContent({
   );
 
   useEffect(() => {
-    if (!resumeSessionId || autoStartRef.current) {
+    if (!profileId || !resumeSessionId || autoStartRef.current) {
       return;
     }
 
     autoStartRef.current = true;
     void handleResumeSession(resumeSessionId);
-  }, [handleResumeSession, resumeSessionId]);
+  }, [handleResumeSession, resumeSessionId, profileId]);
 
   useEffect(() => {
-    if (!autoStart || autoStartRef.current || resumeSessionId) {
+    if (!profileId || !autoStart || autoStartRef.current || resumeSessionId) {
       return;
     }
 
     autoStartRef.current = true;
     void requestStart(autoStart);
-  }, [autoStart, requestStart, resumeSessionId]);
+  }, [autoStart, requestStart, resumeSessionId, profileId]);
 
   useEffect(() => {
     function updateOnlineStatus() {
@@ -369,6 +375,7 @@ export function TestPageContent({
 
     const draft: TestDraftState = touchDraftState({
       questionIds: questions.map((question) => question.id),
+      config: draftConfig,
       responses,
       currentIndex,
       startedAt: draftStartedAt ?? new Date().toISOString(),
@@ -388,6 +395,7 @@ export function TestPageContent({
   }, [
     currentIndex,
     draftStartedAt,
+    draftConfig,
     phase,
     profileId,
     questions,
@@ -565,6 +573,7 @@ export function TestPageContent({
     setPhase("setup");
     setSessionId(null);
     setSessionMode("random");
+    setDraftConfig(undefined);
     setSelectedCount(10);
     setQuestions([]);
     setResponses({});
@@ -586,9 +595,16 @@ export function TestPageContent({
       <PageHeader
         backLink={{ href: "/train", label: t("test.backToTrain") }}
         eyebrow={t("test.eyebrow")}
-        title={t("test.title")}
-        description={t("test.description")}
+        title={t(draftConfig?.officialTopic || (phase === "setup" && autoStart?.mode === "official-topic") ? "officialSyllabus.testTitle" : "test.title")}
+        description={t(draftConfig?.officialTopic || (phase === "setup" && autoStart?.mode === "official-topic") ? "officialSyllabus.testDescription" : "test.description")}
       />
+
+      {(draftConfig?.officialTopic || (phase === "setup" && autoStart?.mode === "official-topic")) && (
+        <Card tone="warning" padding="sm">
+          <p className="text-sm text-text-primary">{t("officialSyllabus.testTopic", { topic: draftConfig?.officialTopic ?? autoStart?.topic ?? "" })}</p>
+          <p className="mt-1 text-xs text-text-secondary">{t(draftConfig?.officialTopic && !draftConfig.officialTopicConfidence ? "officialSyllabus.legacyTestWarning" : "officialSyllabus.testWarning")}</p>
+        </Card>
+      )}
 
       {phase === "setup" ? (
         <>
@@ -624,6 +640,7 @@ export function TestPageContent({
           ) : null}
 
           <Card>
+            {autoStart?.mode !== "official-topic" && <>
             <h2 className="text-base font-medium tracking-tight text-text-primary">
               {t("test.numberOfQuestions")}
             </h2>
@@ -653,6 +670,7 @@ export function TestPageContent({
               </Button>
             </div>
 
+            </>}
             {isLoading ? (
               <p className="mt-4 text-sm text-text-secondary">
                 {t("test.loadingQuestions")}
@@ -666,7 +684,7 @@ export function TestPageContent({
                   variant="secondary"
                   size="sm"
                   className="mt-3"
-                  onClick={() => void handleStartRandom(selectedCount)}
+                  onClick={() => void (autoStart?.mode === "official-topic" ? requestStart(autoStart) : handleStartRandom(selectedCount))}
                 >
                   {t("common.retry")}
                 </Button>

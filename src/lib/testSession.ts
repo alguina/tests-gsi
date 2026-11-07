@@ -102,6 +102,7 @@ export type ExamTestResult = TestResult & {
 };
 
 export type StartedTestSession = {
+  draft?: TestDraftState;
   sessionId: string;
   questions: TestQuestion[];
   mode?: string;
@@ -729,6 +730,47 @@ export async function startTopicTestSession(
     mode: TEST_MODE_TOPIC,
     title: `${topic} (${filterLabel}, ${questions.length})`,
   };
+}
+
+/** Uses the additive official map, without changing the original topic column. */
+export async function startOfficialTopicTestSession(
+  key: string,
+  count: number,
+  userId: string = DEFAULT_USER_ID,
+): Promise<StartedTestSession> {
+  if (![10, 25, 50].includes(count)) throw new Error("INVALID_QUESTION_COUNT");
+  const { findOfficialTopic, getOfficialTopicQuestionIds } = await import("@/lib/officialTopics");
+  const topic = findOfficialTopic(key);
+  if (!topic) throw new Error("NO_TOPIC_QUESTIONS");
+  const ids = getOfficialTopicQuestionIds(key);
+  // Fisher-Yates: random sample without duplicate imported copies.
+  for (let i = ids.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+  }
+  const supabase = createServerSupabaseClient();
+  const questions: TestQuestion[] = [];
+  // Small batches avoid REST URL and row limits, and skip inactive/empty rows.
+  for (let offset = 0; offset < ids.length && questions.length < count; offset += 30) {
+    const { data, error } = await supabase.from("questions").select("id")
+      .in("id", ids.slice(offset, offset + 30)).eq("is_active", true);
+    if (error) throw new Error(`Failed to fetch questions: ${error.message}`);
+    const active = new Set((data ?? []).map((row) => row.id as string));
+    const batch = await fetchTestQuestionsByIds(ids.slice(offset, offset + 30).filter((id) => active.has(id)));
+    questions.push(...batch.filter((q) => q.answers.length >= 2 && q.answers.some((a) => a.isCorrect)));
+  }
+  questions.splice(count);
+  if (!questions.length) throw new Error("NO_TOPIC_QUESTIONS");
+  const draft = createInitialDraftState(questions.map((q) => q.id));
+  draft.config = { officialTopic: key, officialTopicConfidence: "alta" };
+  const title = `BOE ${key} - ${topic.titulo} (provisional, ${questions.length})`;
+  const { data: session, error } = await supabase.from("test_sessions").insert({
+    user_id: userId, mode: TEST_MODE_TOPIC, title,
+    total_questions: questions.length, correct_count: 0, wrong_count: 0,
+    blank_count: 0, net_score: 0, draft_state: draft,
+  }).select("id").single();
+  if (error || !session) throw new Error(`Failed to create test session: ${error?.message ?? "Unknown error"}`);
+  return { sessionId: session.id, questions, mode: TEST_MODE_TOPIC, title, draft };
 }
 
 export async function startRecommendedTestSession(

@@ -133,3 +133,18 @@ export function getOfficialCoverage(): CoberturaBanco {
   );
   return { temas, sinAsignar };
 }
+
+/** Distinct high-confidence representatives only; provisional until human review. */
+export function getOfficialTopicQuestionIds(key: string): string[] {
+  if (!temaIndex.has(key)) return [];
+  return Object.entries(topicMapDistinct)
+    .filter(([, entry]) => {
+      const a = toAsignacion(entry);
+      return a && (a.confianza === "alta" || a.confianza === "revisada") && `${a.bloque}.${a.tema}` === key;
+    })
+    .map(([id]) => id);
+}
+
+export function findOfficialTopic(key: string): TemaOficial | undefined {
+  return temaIndex.get(key);
+}
