@@ -43,3 +43,5 @@ next-env.d.ts
 
 # local explanation working files
 data/
+!src/data/
+# (el CSV revisable vive en docs/topic_map_v2.csv)

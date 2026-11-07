@@ -80,6 +80,11 @@ export const PROGRESS_SECTION_LINKS: NavLinkItem[] = [
     descriptionKey: "progressSection.topicsDescription",
   },
   {
+    href: "/temario-oficial",
+    labelKey: "nav.officialSyllabus",
+    descriptionKey: "progressSection.officialSyllabusDescription",
+  },
+  {
     href: "/export?type=bookmarks",
     labelKey: "progressSection.bookmarks",
     descriptionKey: "progressSection.bookmarksDescription",
@@ -136,3 +141,4 @@ export function isNavSectionActive(pathname: string, section: NavSection): boole
 export function isNavItemActive(pathname: string, item: NavSection): boolean {
   return isNavSectionActive(pathname, item);
 }
+
