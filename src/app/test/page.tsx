@@ -52,6 +52,13 @@ export default async function TestPage({ searchParams }: TestPageProps) {
     return <TestPageContent resumeSessionId={resumeSessionId} />;
   }
 
+  if (mode === "official-topic" && params.topic) {
+    const count = Number(params.count ?? 10);
+    if ([10, 25, 50].includes(count)) {
+      return <TestPageContent autoStart={{ mode: "official-topic", count, topic: params.topic }} />;
+    }
+  }
+
   if (mode === "failed") {
     const count = parseCount(params.count, FAILED_QUESTION_COUNTS);
 

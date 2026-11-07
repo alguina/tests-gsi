@@ -5,6 +5,8 @@ export type TestDraftState = {
   responses: Record<string, string | null>;
   currentIndex: number;
   config?: {
+    officialTopic?: string;
+    officialTopicConfidence?: "alta";
     topic?: string;
     topicFilter?: TopicQuestionFilter;
   };

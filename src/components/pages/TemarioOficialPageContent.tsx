@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -94,6 +95,11 @@ export function TemarioOficialPageContent({ cobertura }: Props) {
                         `${t(BAND_KEY[banda])}: ${c.porConfianza[banda]}`,
                     ).join(" · ")}
                   </p>
+                  {c.porConfianza.alta > 0 && (
+                    <Link className="mt-3 inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium text-text-primary hover:bg-surface-muted focus-visible:outline-2" href={`/test?mode=official-topic&topic=${c.tema.bloque}.${c.tema.tema}&count=10`}>
+                      {t("officialSyllabus.startTest", { count: Math.min(10, c.porConfianza.alta) })}
+                    </Link>
+                  )}
                 </Card>
               ))}
           </ul>

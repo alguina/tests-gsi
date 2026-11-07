@@ -1,6 +1,15 @@
 import type { Dictionary } from "@/lib/i18n/types";
 
 export const en: Dictionary = {
+  "officialSyllabus.startTest": "Take test · up to {count} high-confidence questions",
+  "officialSyllabus.testTopic": "BOE topic {topic} · provisional classification",
+  "officialSyllabus.testWarning": "Only high-confidence automatic assignments, not yet reviewed by a person. Topic assignments may be wrong. Medium, low and unassigned questions are excluded.",
+
+  "officialSyllabus.testTitle": "Official topic test",
+  "officialSyllabus.testDescription": "Practice questions from the selected topic. Results are saved to the active profile.",
+
+  "officialSyllabus.legacyTestWarning": "Automatic assignments not yet reviewed by a person. Topic assignments may be wrong.",
+
   "app.title": "GSI A2 Study",
 
   "nav.home": "Home",
