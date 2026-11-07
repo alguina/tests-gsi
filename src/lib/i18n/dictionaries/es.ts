@@ -10,6 +10,8 @@ export const es: Dictionary = {
 
   "officialSyllabus.legacyTestWarning": "Asignación automática aún sin revisión humana. Puede haber errores de tema.",
 
+  "officialSyllabus.noHighQuestions": "Sin preguntas de confianza alta disponibles para practicar.",
+
   "app.title": "GSI A2 Study",
 
   "nav.home": "Inicio",

@@ -37,6 +37,11 @@ describe("startOfficialTopicTestSession", () => {
     expect(state.inserted?.user_id).toBe("test-profile");
     expect(state.inserted?.total_questions).toBe(10);
   });
+  it("uses available questions when the topic has fewer than requested", async () => {
+    const test = await startOfficialTopicTestSession("III.8", 10, "test-profile");
+    expect(test.questions).toHaveLength(2);
+    expect(state.inserted?.total_questions).toBe(2);
+  });
   it("rejects unknown topics and invalid counts without creating a session", async () => {
     await expect(startOfficialTopicTestSession("sin_asignar", 10)).rejects.toThrow("NO_TOPIC_QUESTIONS");
     await expect(startOfficialTopicTestSession("I.1", 999)).rejects.toThrow("INVALID_QUESTION_COUNT");

@@ -336,22 +336,22 @@ export function TestPageContent({
   );
 
   useEffect(() => {
-    if (!resumeSessionId || autoStartRef.current) {
+    if (!profileId || !resumeSessionId || autoStartRef.current) {
       return;
     }
 
     autoStartRef.current = true;
     void handleResumeSession(resumeSessionId);
-  }, [handleResumeSession, resumeSessionId]);
+  }, [handleResumeSession, resumeSessionId, profileId]);
 
   useEffect(() => {
-    if (!autoStart || autoStartRef.current || resumeSessionId) {
+    if (!profileId || !autoStart || autoStartRef.current || resumeSessionId) {
       return;
     }
 
     autoStartRef.current = true;
     void requestStart(autoStart);
-  }, [autoStart, requestStart, resumeSessionId]);
+  }, [autoStart, requestStart, resumeSessionId, profileId]);
 
   useEffect(() => {
     function updateOnlineStatus() {
@@ -573,6 +573,7 @@ export function TestPageContent({
     setPhase("setup");
     setSessionId(null);
     setSessionMode("random");
+    setDraftConfig(undefined);
     setSelectedCount(10);
     setQuestions([]);
     setResponses({});
@@ -594,11 +595,11 @@ export function TestPageContent({
       <PageHeader
         backLink={{ href: "/train", label: t("test.backToTrain") }}
         eyebrow={t("test.eyebrow")}
-        title={t(draftConfig?.officialTopic || autoStart?.mode === "official-topic" ? "officialSyllabus.testTitle" : "test.title")}
-        description={t(draftConfig?.officialTopic || autoStart?.mode === "official-topic" ? "officialSyllabus.testDescription" : "test.description")}
+        title={t(draftConfig?.officialTopic || (phase === "setup" && autoStart?.mode === "official-topic") ? "officialSyllabus.testTitle" : "test.title")}
+        description={t(draftConfig?.officialTopic || (phase === "setup" && autoStart?.mode === "official-topic") ? "officialSyllabus.testDescription" : "test.description")}
       />
 
-      {(draftConfig?.officialTopic || autoStart?.mode === "official-topic") && (
+      {(draftConfig?.officialTopic || (phase === "setup" && autoStart?.mode === "official-topic")) && (
         <Card tone="warning" padding="sm">
           <p className="text-sm text-text-primary">{t("officialSyllabus.testTopic", { topic: draftConfig?.officialTopic ?? autoStart?.topic ?? "" })}</p>
           <p className="mt-1 text-xs text-text-secondary">{t(draftConfig?.officialTopic && !draftConfig.officialTopicConfidence ? "officialSyllabus.legacyTestWarning" : "officialSyllabus.testWarning")}</p>
@@ -639,6 +640,7 @@ export function TestPageContent({
           ) : null}
 
           <Card>
+            {autoStart?.mode !== "official-topic" && <>
             <h2 className="text-base font-medium tracking-tight text-text-primary">
               {t("test.numberOfQuestions")}
             </h2>
@@ -668,6 +670,7 @@ export function TestPageContent({
               </Button>
             </div>
 
+            </>}
             {isLoading ? (
               <p className="mt-4 text-sm text-text-secondary">
                 {t("test.loadingQuestions")}
@@ -681,7 +684,7 @@ export function TestPageContent({
                   variant="secondary"
                   size="sm"
                   className="mt-3"
-                  onClick={() => void handleStartRandom(selectedCount)}
+                  onClick={() => void (autoStart?.mode === "official-topic" ? requestStart(autoStart) : handleStartRandom(selectedCount))}
                 >
                   {t("common.retry")}
                 </Button>

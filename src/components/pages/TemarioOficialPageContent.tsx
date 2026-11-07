@@ -100,6 +100,7 @@ export function TemarioOficialPageContent({ cobertura }: Props) {
                       {t("officialSyllabus.startTest", { count: Math.min(10, c.porConfianza.alta) })}
                     </Link>
                   )}
+                  {c.porConfianza.alta === 0 && <p className="mt-2 text-xs text-text-muted">{t("officialSyllabus.noHighQuestions")}</p>}
                 </Card>
               ))}
           </ul>
