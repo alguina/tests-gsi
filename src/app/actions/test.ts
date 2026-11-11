@@ -1,12 +1,11 @@
 "use server";
 
-import { cookies } from "next/headers";
 import {
   actionOk,
   toActionError,
   type ActionResult,
 } from "@/lib/actionResult";
-import { DEFAULT_USER_ID } from "@/lib/currentUser";
+import { requireProfileUserId } from "@/lib/profile/resolveProfileUser";
 import {
   getQuestionBookmarks,
   getQuestionNotes,
@@ -19,7 +18,6 @@ import {
   getQuestionExplanations,
   type QuestionExplanationMap,
 } from "@/lib/questionExplanations";
-import { PROFILE_COOKIE_NAME } from "@/lib/profile/profileStore";
 import type { TestDraftState, TopicQuestionFilter } from "@/lib/testDraft";
 import {
   countExplainedQuestionsAvailable,
@@ -50,12 +48,9 @@ import { buildStudyRecommendation } from "@/lib/recommendations";
 import type { StudyRecommendation } from "@/lib/recommendations";
 
 async function resolveUserId(clientUserId?: string): Promise<string> {
-  if (clientUserId) {
-    return clientUserId;
-  }
-
-  const cookieStore = await cookies();
-  return cookieStore.get(PROFILE_COOKIE_NAME)?.value ?? DEFAULT_USER_ID;
+  // The client-supplied id is only a fallback for claiming a still
+  // unclaimed profile; a valid possession-token cookie always wins.
+  return requireProfileUserId(clientUserId);
 }
 
 export async function startRandomTest(
@@ -256,9 +251,7 @@ export async function loadExamSessionResult(
   sessionId: string,
 ): Promise<ExamTestResult | null> {
   try {
-    const cookieStore = await cookies();
-    const userId =
-      cookieStore.get(PROFILE_COOKIE_NAME)?.value ?? DEFAULT_USER_ID;
+    const userId = await resolveUserId();
     return await getExamSessionResult(sessionId, userId);
   } catch {
     return null;
@@ -269,9 +262,7 @@ export async function loadSessionResult(
   sessionId: string,
 ): Promise<TestResult | null> {
   try {
-    const cookieStore = await cookies();
-    const userId =
-      cookieStore.get(PROFILE_COOKIE_NAME)?.value ?? DEFAULT_USER_ID;
+    const userId = await resolveUserId();
     return await getSessionResult(sessionId, userId);
   } catch {
     return null;

@@ -15,11 +15,8 @@ export function isAdminTokenValid(token: string | undefined | null): boolean {
 }
 
 export function assertAdminAccess(token: string | undefined | null): void {
-  if (!isAdminConfigured()) {
-    return;
-  }
-
-  if (!isAdminTokenValid(token)) {
+  // Fail closed: an unconfigured admin token must deny, never allow.
+  if (!isAdminConfigured() || !isAdminTokenValid(token)) {
     throw new Error("ADMIN_ACCESS_DENIED");
   }
 }
