@@ -1,22 +1,20 @@
 "use server";
 
-import { cookies } from "next/headers";
 import { actionFail, actionOk, type ActionResult } from "@/lib/actionResult";
 import { normalizeName } from "@/lib/profile/normalizeName";
-import { PROFILE_COOKIE_NAME } from "@/lib/profile/profileStore";
+import { claimProfileAfterLookup } from "@/lib/profile/resolveProfileUser";
 import type { LocalProfile } from "@/lib/profile/profileTypes";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
-
+/**
+ * Sets the profile cookies and issues the possession token. Fails with
+ * PROFILE_CLAIMED when another device already owns this profile.
+ */
 async function setProfileCookie(userId: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set(PROFILE_COOKIE_NAME, userId, {
-    path: "/",
-    maxAge: COOKIE_MAX_AGE,
-    sameSite: "lax",
-    httpOnly: false,
-  });
+  const claimed = await claimProfileAfterLookup(userId);
+  if (!claimed) {
+    throw new Error("PROFILE_CLAIMED");
+  }
 }
 
 export async function findOrCreateProfile(

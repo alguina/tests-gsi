@@ -18,7 +18,7 @@ export async function verifyAdminAccessAction(
 ): Promise<ActionResult<void>> {
   try {
     if (!isAdminConfigured()) {
-      return actionOk(undefined);
+      throw new Error("ADMIN_ACCESS_DENIED");
     }
 
     if (!isAdminTokenValid(token)) {
