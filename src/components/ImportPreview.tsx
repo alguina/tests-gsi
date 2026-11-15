@@ -346,12 +346,7 @@ function QuestionMetadata({
 }: {
   question: ParsedTest["questions"][number];
 }) {
-  const metadata = [
-    question.block,
-    question.topic,
-    question.year,
-    question.exam,
-  ].filter(Boolean);
+  const metadata = [question.year, question.exam].filter(Boolean);
 
   if (!metadata.length) {
     return null;
