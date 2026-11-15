@@ -215,6 +215,11 @@ export const en: Dictionary = {
     "Start a practice session, review weak areas, and track progress from your question bank stored in Supabase.",
   "home.description":
     "Train for GSI A2, review weak areas, and track your progress with a broad set of real questions.",
+  "home.studyAction": "Study",
+  "home.trainAction": "Train",
+  "home.startStudying": "Start",
+  "home.studyProgressValue": "{completed} of {total} topics",
+  "home.trainingProgressValue": "{seen} of {total} questions",
   "home.startTraining": "Start training",
   "home.takeRandomTest": "Take random test",
   "home.totalQuestions": "Questions imported",
