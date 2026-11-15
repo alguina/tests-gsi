@@ -8,11 +8,9 @@ import {
 } from "@/lib/exports/markdown";
 import type { ExportDocument, ExportRequest } from "@/lib/exports/types";
 import { buildStudyRecommendation } from "@/lib/recommendations/buildRecommendation";
-import {
-  buildTopicPerformance,
-  computeNetScore,
-  normalizeNetScoreTo100,
-} from "@/lib/stats/userMetrics";
+import { computeNetScore, normalizeNetScoreTo100 } from "@/lib/stats/userMetrics";
+import { buildOfficialTopicMetrics } from "@/lib/studyMetrics";
+import { findOfficialTopic, getReliableOfficialTopic } from "@/lib/officialTopics";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { TEST_MODE_EXAM, TEST_MODE_OFFICIAL_TOPIC } from "@/lib/testSession";
 
@@ -85,15 +83,14 @@ export async function buildWeeklyReportExport(
     (question) => !seenIds.has(question.id as string),
   ).length;
 
-  const topicPerformance = buildTopicPerformance({
-    questions: eligibleQuestions,
-    attempts: attempts.map((attempt) => ({
+  const topicPerformance = buildOfficialTopicMetrics(
+    attempts.map((attempt) => ({
       question_id: attempt.question_id as string,
       is_correct: attempt.is_correct === true,
       is_blank: attempt.is_blank === true,
       answered_at: attempt.answered_at as string,
     })),
-  });
+  ).performance;
 
   const strongest = [...topicPerformance]
     .filter((topic) => topic.accuracy !== null)
@@ -200,8 +197,8 @@ export async function buildErrorsByTopicExport(
       return true;
     }
 
-    const question = attempt.questions as { topic?: string | null } | null;
-    return String(question?.topic ?? "").trim() === topic;
+    const official = getReliableOfficialTopic(attempt.question_id as string);
+    return official ? `${official.bloque}.${official.tema}` === topic : false;
   });
   const [notesResult, bookmarksResult] = await Promise.all([
     supabase
@@ -234,8 +231,8 @@ export async function buildErrorsByTopicExport(
   const grouped = new Map<string, typeof attempts>();
 
   for (const attempt of latestByQuestion.values()) {
-    const question = attempt.questions as { topic?: string | null } | null;
-    const topicKey = String(question?.topic ?? "unknown").trim() || "unknown";
+    const official = getReliableOfficialTopic(attempt.question_id as string);
+    const topicKey = official ? `${official.bloque}.${official.tema}` : "unknown";
     const bucket = grouped.get(topicKey) ?? [];
     bucket.push(attempt);
     grouped.set(topicKey, bucket);
@@ -251,7 +248,8 @@ export async function buildErrorsByTopicExport(
   for (const [topicKey, topicAttempts] of [...grouped.entries()].sort((a, b) =>
     a[0].localeCompare(b[0], "es", { numeric: true }),
   )) {
-    markdown += mdHeading(2, `Topic ${topicKey}`);
+    const officialTitle = findOfficialTopic(topicKey)?.titulo;
+    markdown += mdHeading(2, `Topic ${topicKey}${officialTitle ? ` · ${officialTitle}` : ""}`);
     markdown += mdKeyValue([
       ["Failed questions", topicAttempts.length],
       [
@@ -494,7 +492,7 @@ export async function buildProgressSnapshotExport(
   markdown += mdTable(
     ["Topic", "Seen", "Attempts", "Accuracy", "Error rate", "Priority"],
     metrics.topicPerformance.slice(0, 25).map((topic) => [
-      topic.topic,
+      topic.topicTitle ? `${topic.topic} · ${topic.topicTitle}` : topic.topic,
       topic.uniqueSeen,
       topic.totalAttempts,
       topic.accuracy === null ? "—" : `${topic.accuracy}%`,
