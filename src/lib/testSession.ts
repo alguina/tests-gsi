@@ -3,7 +3,6 @@ import {
   createInitialDraftState,
   MAX_ALL_QUESTIONS_CAP,
   type TestDraftState,
-  type TopicQuestionFilter,
 } from "@/lib/testDraft";
 import {
   countExplainedQuestions,
@@ -11,14 +10,13 @@ import {
 } from "@/lib/questionExplanations";
 import { logServerEvent } from "@/lib/server/logger";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getReliableOfficialTopic } from "@/lib/officialTopics";
 
 export const TEST_QUESTION_COUNTS = [10, 25, 50, 100] as const;
 export const FAILED_QUESTION_COUNTS = [10, 25, "all"] as const;
-export const TOPIC_QUESTION_COUNTS = [10, 25, 50, "all"] as const;
 export const EXPLAINED_QUESTION_COUNTS = [5, 8, 10, "all"] as const;
 export const TEST_MODE_RANDOM = "random" as const;
 export const TEST_MODE_FAILED = "failed_questions" as const;
-export const TEST_MODE_TOPIC = "topic" as const;
 export const TEST_MODE_RECOMMENDED = "recommended" as const;
 export const TEST_MODE_EXPLAINED = "explained" as const;
 export const TEST_MODE_EXAM = "exam_simulation" as const;
@@ -291,15 +289,18 @@ export async function fetchTestQuestionsByIds(
   );
 
   return orderedRows
-    .map((question) => ({
-      id: question.id,
-      text: question.text,
-      block: question.block,
-      topic: question.topic,
-      year: question.year,
-      exam: question.exam,
-      answers: answersByQuestionId.get(question.id) ?? [],
-    }))
+    .map((question) => {
+      const official = getReliableOfficialTopic(question.id);
+      return {
+        id: question.id,
+        text: question.text,
+        block: official?.titulo ?? null,
+        topic: official ? `${official.bloque}.${official.tema}` : null,
+        year: question.year,
+        exam: question.exam,
+        answers: answersByQuestionId.get(question.id) ?? [],
+      };
+    })
     .filter((question) => question.answers.length > 0);
 }
 
@@ -610,136 +611,7 @@ export async function startFailedQuestionsSession(
   };
 }
 
-export async function selectTopicQuestionIds(
-  userId: string,
-  topic: string,
-  requested: number | "all",
-  filter: TopicQuestionFilter = "all",
-): Promise<string[]> {
-  const supabase = createServerSupabaseClient();
-
-  const { data: topicQuestions, error } = await supabase
-    .from("questions")
-    .select("id")
-    .eq("topic", topic)
-    .eq("is_active", true);
-
-  if (error) {
-    throw new Error(`Failed to load topic questions: ${error.message}`);
-  }
-
-  let candidateIds = (topicQuestions ?? []).map((row) => row.id as string);
-
-  if (!candidateIds.length) {
-    return [];
-  }
-
-  const { data: attempts } = await supabase
-    .from("attempts")
-    .select("question_id, is_correct, is_blank, answered_at, test_sessions!inner(mode)")
-    .eq("user_id", userId)
-    .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC)
-    .in("question_id", candidateIds)
-    .order("answered_at", { ascending: false });
-
-  const attemptStats = new Map<
-    string,
-    { failCount: number; latestIsCorrect: boolean; seen: boolean }
-  >();
-
-  for (const attempt of attempts ?? []) {
-    const questionId = attempt.question_id as string;
-    const current = attemptStats.get(questionId) ?? {
-      failCount: 0,
-      latestIsCorrect: false,
-      seen: false,
-    };
-
-    if (!attemptStats.has(questionId)) {
-      current.latestIsCorrect = attempt.is_correct === true;
-    }
-
-    current.seen = true;
-
-    if (!attempt.is_blank && !attempt.is_correct) {
-      current.failCount += 1;
-    }
-
-    attemptStats.set(questionId, current);
-  }
-
-  if (filter === "failed") {
-    candidateIds = candidateIds.filter((id) => {
-      const stats = attemptStats.get(id);
-      return stats && stats.failCount > 0 && !stats.latestIsCorrect;
-    });
-  } else if (filter === "unseen") {
-    candidateIds = candidateIds.filter((id) => !attemptStats.get(id)?.seen);
-  }
-
-  const eligibleQuestions = await fetchTestQuestionsByIds(candidateIds);
-  const eligibleIds = eligibleQuestions.map((question) => question.id);
-  const limit = resolveQuestionLimit(requested, eligibleIds.length);
-
-  return eligibleIds.slice(0, limit);
-}
-
-export async function startTopicTestSession(
-  topic: string,
-  requested: number | "all",
-  filter: TopicQuestionFilter,
-  userId: string = DEFAULT_USER_ID,
-): Promise<StartedTestSession> {
-  const questionIds = await selectTopicQuestionIds(
-    userId,
-    topic,
-    requested,
-    filter,
-  );
-
-  if (!questionIds.length) {
-    throw new Error("NO_TOPIC_QUESTIONS");
-  }
-
-  const questions = await fetchTestQuestionsByIds(questionIds);
-  const draft = createInitialDraftState(questionIds);
-  draft.config = { topic, topicFilter: filter };
-
-  const supabase = createServerSupabaseClient();
-  const filterLabel =
-    filter === "all" ? "all" : filter === "failed" ? "failed" : "unseen";
-
-  const { data: session, error: sessionError } = await supabase
-    .from("test_sessions")
-    .insert({
-      user_id: userId,
-      mode: TEST_MODE_TOPIC,
-      title: `${topic} (${filterLabel}, ${questions.length})`,
-      total_questions: questions.length,
-      correct_count: 0,
-      wrong_count: 0,
-      blank_count: 0,
-      net_score: 0,
-      draft_state: draft,
-    })
-    .select("id")
-    .single();
-
-  if (sessionError || !session) {
-    throw new Error(
-      `Failed to create test session: ${sessionError?.message ?? "Unknown error"}`,
-    );
-  }
-
-  return {
-    sessionId: session.id,
-    questions,
-    mode: TEST_MODE_TOPIC,
-    title: `${topic} (${filterLabel}, ${questions.length})`,
-  };
-}
-
-/** Uses the additive official map, without changing the original topic column. */
+/** Creates a topic test from the official 57-topic syllabus classification. */
 export async function startOfficialTopicTestSession(
   key: string,
   count: number,
@@ -972,15 +844,18 @@ export async function fetchRandomTestQuestions(
   );
 
   return questionRows
-    .map((question) => ({
-      id: question.id,
-      text: question.text,
-      block: question.block,
-      topic: question.topic,
-      year: question.year,
-      exam: question.exam,
-      answers: answersByQuestionId.get(question.id) ?? [],
-    }))
+    .map((question) => {
+      const official = getReliableOfficialTopic(question.id);
+      return {
+        id: question.id,
+        text: question.text,
+        block: official?.titulo ?? null,
+        topic: official ? `${official.bloque}.${official.tema}` : null,
+        year: question.year,
+        exam: question.exam,
+        answers: answersByQuestionId.get(question.id) ?? [],
+      };
+    })
     .filter((question) => question.answers.length > 0);
 }
 
@@ -1229,7 +1104,7 @@ export async function getExamSessionResult(
   const { data: attemptRows } = await supabase
     .from("attempts")
     .select(
-      "is_correct, is_blank, questions(topic, block)",
+      "question_id, is_correct, is_blank",
     )
     .eq("session_id", sessionId)
     .eq("user_id", userId);
@@ -1245,11 +1120,9 @@ export async function getExamSessionResult(
   >();
 
   for (const attempt of attemptRows ?? []) {
-    const question = extractQuestionRow(
-      attempt.questions as DbQuestionRow | DbQuestionRow[] | null,
-    );
-    const topic = String(question?.topic ?? "").trim() || "unknown";
-    const block = String(question?.block ?? "").trim();
+    const official = getReliableOfficialTopic(attempt.question_id as string);
+    const topic = official ? `${official.bloque}.${official.tema}` : "unknown";
+    const block = official?.titulo ?? "";
     const stats = topicStats.get(topic) ?? {
       titles: new Map<string, number>(),
       correct: 0,
@@ -1386,14 +1259,15 @@ export async function getSessionResult(
 
   const questions: TestQuestionResult[] = attemptRows.map((attempt) => {
     const question = extractQuestionRow(attempt.questions);
+    const official = getReliableOfficialTopic(attempt.question_id);
 
     return {
       questionId: attempt.question_id,
       text: question?.text ?? "",
       metadata: question
         ? formatQuestionMetadata({
-            block: question.block,
-            topic: question.topic,
+            block: official?.titulo ?? null,
+            topic: official ? `${official.bloque}.${official.tema}` : null,
             year: question.year,
             exam: question.exam,
           } as TestQuestion)
