@@ -178,14 +178,14 @@ function HomePrimaryActions({
         progressLabel={t("home.studyProgressValue", { completed: studyCompleted, total: 57 })}
         percent={studyPercent}
         href={studyHref}
-        actionLabel={studyCompleted > 0 ? t("study.continue") : t("home.startStudying")}
+        actionLabel={t("home.startStudying")}
       />
       <HomeActionCard
         title={t("home.trainAction")}
         progressLabel={t("home.trainingProgressValue", { seen: trainingSeen, total: trainingAvailable })}
         percent={trainingPercent}
         href="/train"
-        actionLabel={t("training.start")}
+        actionLabel={t("home.startStudying")}
       />
     </div>
   );
