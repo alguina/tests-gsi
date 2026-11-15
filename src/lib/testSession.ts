@@ -22,6 +22,11 @@ export const TEST_MODE_TOPIC = "topic" as const;
 export const TEST_MODE_RECOMMENDED = "recommended" as const;
 export const TEST_MODE_EXPLAINED = "explained" as const;
 export const TEST_MODE_EXAM = "exam_simulation" as const;
+export const TEST_MODE_OFFICIAL_TOPIC = "official_topic" as const;
+
+export function isGeneralTrainingMode(mode: string): boolean {
+  return mode !== TEST_MODE_EXAM && mode !== TEST_MODE_OFFICIAL_TOPIC;
+}
 
 export const EXAM_QUESTION_COUNTS = [50, 100] as const;
 export const EXAM_TIME_LIMITS_MINUTES = [60, 90, 120] as const;
@@ -502,8 +507,9 @@ export async function selectFailedQuestionIds(
 
   const { data, error } = await supabase
     .from("attempts")
-    .select("question_id, is_correct, is_blank, answered_at")
+    .select("question_id, is_correct, is_blank, answered_at, test_sessions!inner(mode)")
     .eq("user_id", userId)
+    .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC)
     .order("answered_at", { ascending: false });
 
   if (error) {
@@ -630,8 +636,9 @@ export async function selectTopicQuestionIds(
 
   const { data: attempts } = await supabase
     .from("attempts")
-    .select("question_id, is_correct, is_blank, answered_at")
+    .select("question_id, is_correct, is_blank, answered_at, test_sessions!inner(mode)")
     .eq("user_id", userId)
+    .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC)
     .in("question_id", candidateIds)
     .order("answered_at", { ascending: false });
 
@@ -765,12 +772,12 @@ export async function startOfficialTopicTestSession(
   draft.config = { officialTopic: key, officialTopicConfidence: "alta" };
   const title = `BOE ${key} - ${topic.titulo} (provisional, ${questions.length})`;
   const { data: session, error } = await supabase.from("test_sessions").insert({
-    user_id: userId, mode: TEST_MODE_TOPIC, title,
+    user_id: userId, mode: TEST_MODE_OFFICIAL_TOPIC, title,
     total_questions: questions.length, correct_count: 0, wrong_count: 0,
     blank_count: 0, net_score: 0, draft_state: draft,
   }).select("id").single();
   if (error || !session) throw new Error(`Failed to create test session: ${error?.message ?? "Unknown error"}`);
-  return { sessionId: session.id, questions, mode: TEST_MODE_TOPIC, title, draft };
+  return { sessionId: session.id, questions, mode: TEST_MODE_OFFICIAL_TOPIC, title, draft };
 }
 
 export async function startRecommendedTestSession(
