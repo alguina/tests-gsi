@@ -223,7 +223,7 @@ function HomeActionCard({
       >
         <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${boundedPercent}%` }} />
       </div>
-      <Button href={href} size="sm" className="mt-3 w-full">
+      <Button href={href} className="mt-3 min-h-11 w-full">
         {actionLabel}
       </Button>
     </Card>

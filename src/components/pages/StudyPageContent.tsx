@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useProfile } from "@/components/profile/ProfileProvider";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useI18n } from "@/lib/i18n/useI18n";
@@ -39,6 +40,7 @@ export function StudyPageContent({ topics }: Props) {
         eyebrow={t("study.eyebrow")}
         title={t("study.title")}
         description={t("study.description")}
+        actions={<Button href="/study/plan" variant="secondary">{t("study.openPlan")}</Button>}
       />
 
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
