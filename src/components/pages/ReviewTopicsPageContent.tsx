@@ -17,9 +17,9 @@ import {
   TableWrap,
 } from "@/components/ui/Table";
 import { useI18n } from "@/lib/i18n/useI18n";
-import type { TopicQuestionFilter } from "@/lib/testDraft";
 import type { getTopicSummaries } from "@/lib/studyMetrics";
-import { TOPIC_QUESTION_COUNTS } from "@/lib/testSession";
+
+const OFFICIAL_TOPIC_QUESTION_COUNTS = [10, 25, 50] as const;
 
 type ReviewTopicsPageContentProps = {
   topics: Awaited<ReturnType<typeof getTopicSummaries>>;
@@ -40,15 +40,13 @@ export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps
   const { t } = useI18n();
   const router = useRouter();
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
-  const [selectedCount, setSelectedCount] = useState<number | "all">(10);
-  const [selectedFilter, setSelectedFilter] =
-    useState<TopicQuestionFilter>("all");
+  const [selectedCount, setSelectedCount] = useState<number>(10);
 
   const activeTopic = topics.find((topic) => topic.topic === selectedTopic);
 
-  function handleTrainTopic(topicCode: string, count = selectedCount, filter = selectedFilter) {
+  function handleTrainTopic(topicCode: string, count = selectedCount) {
     router.push(
-      `/test?mode=topic&topic=${encodeURIComponent(topicCode)}&count=${count}&filter=${filter}`,
+      `/test?mode=official-topic&topic=${encodeURIComponent(topicCode)}&count=${count}`,
     );
   }
 
@@ -68,7 +66,6 @@ export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps
                 <TableHead>
                   <TableRow>
                     <TableCell header>{t("reviewTopics.topic")}</TableCell>
-                    <TableCell header>{t("topics.descriptionBlock")}</TableCell>
                     <TableCell header>{t("topics.availableQuestions")}</TableCell>
                     <TableCell header>{t("topics.answered")}</TableCell>
                     <TableCell header>{t("topics.correct")}</TableCell>
@@ -94,20 +91,6 @@ export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps
                         >
                           {formatTopicName(topic, t)}
                         </button>
-                        {topic.sourceHint ? (
-                          <p className="mt-1 text-xs text-text-muted">
-                            {topic.sourceHint}
-                          </p>
-                        ) : null}
-                        {topic.rawBlock && topic.rawBlock !== topic.displayLabel ? (
-                          <p className="mt-1 text-xs text-text-muted">
-                            {t("topics.rawBlock")}: {topic.rawBlock}
-                            {topic.topic ? ` · ${t("topics.rawTopic")}: ${topic.topic}` : ""}
-                          </p>
-                        ) : null}
-                      </TableCell>
-                      <TableCell>
-                        {topic.description ?? t("common.dash")}
                       </TableCell>
                       <TableCell>{topic.totalQuestions}</TableCell>
                       <TableCell>{topic.answered}</TableCell>
@@ -151,38 +134,14 @@ export function ReviewTopicsPageContent({ topics }: ReviewTopicsPageContentProps
                 {t("test.numberOfQuestions")}
               </p>
               <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {TOPIC_QUESTION_COUNTS.map((count) => (
+                {OFFICIAL_TOPIC_QUESTION_COUNTS.map((count) => (
                   <SelectableOption
                     key={String(count)}
                     selected={selectedCount === count}
                     onClick={() => setSelectedCount(count)}
                     className="px-3 py-3"
                   >
-                    {count === "all"
-                      ? t("test.filterAll")
-                      : t("test.questionsCount", { count })}
-                  </SelectableOption>
-                ))}
-              </div>
-
-              <p className="mt-4 text-sm font-medium text-text-primary">
-                {t("test.topicLabel")}
-              </p>
-              <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                {(
-                  [
-                    ["all", "test.topicFilterAll"],
-                    ["failed", "test.topicFilterFailed"],
-                    ["unseen", "test.topicFilterUnseen"],
-                  ] as const
-                ).map(([filter, labelKey]) => (
-                  <SelectableOption
-                    key={filter}
-                    selected={selectedFilter === filter}
-                    onClick={() => setSelectedFilter(filter)}
-                    className="px-3 py-3"
-                  >
-                    {t(labelKey)}
+                    {t("test.questionsCount", { count })}
                   </SelectableOption>
                 ))}
               </div>
