@@ -215,6 +215,11 @@ export const es: Dictionary = {
     "Inicia una sesión de práctica, repasa áreas débiles y sigue tu progreso con tu banco de preguntas guardado en Supabase.",
   "home.description":
     "Entrena para GSI A2, repasa áreas débiles y sigue tu progreso con un amplio conjunto de preguntas reales.",
+  "home.studyAction": "Estudiar",
+  "home.trainAction": "Entrenar",
+  "home.startStudying": "Empezar",
+  "home.studyProgressValue": "{completed} de {total} temas",
+  "home.trainingProgressValue": "{seen} de {total} preguntas",
   "home.startTraining": "Empezar entrenamiento",
   "home.takeRandomTest": "Test aleatorio",
   "home.totalQuestions": "Preguntas importadas",

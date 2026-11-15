@@ -43,6 +43,8 @@ export type HomeStudyStats = {
   overallAccuracy: number | null;
   mistakesToReview: number;
   weakTopicsCount: number | null;
+  trainingQuestionsSeen: number;
+  trainingQuestionsAvailable: number;
   latestSession: LatestSession | null;
   inProgressSession: InProgressSession | null;
   /** @deprecated Use questionsAnswered */
@@ -242,7 +244,7 @@ export async function getHomeStudyStats(
     await Promise.all([
       supabase
         .from("attempts")
-        .select("id, is_correct, is_blank, test_sessions!inner(mode)")
+        .select("id, question_id, is_correct, is_blank, test_sessions!inner(mode)")
         .eq("user_id", userId)
         .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC),
       supabase
@@ -272,6 +274,15 @@ export async function getHomeStudyStats(
     answeredNonBlank.length > 0
       ? Math.round((correctAttempts / answeredNonBlank.length) * 1000) / 10
       : null;
+  const trainingQuestionsSeen = new Set(
+    attempts
+      .filter((attempt) => getReliableOfficialTopic(attempt.question_id as string))
+      .map((attempt) => getCanonicalQuestionId(attempt.question_id as string)),
+  ).size;
+  const trainingQuestionsAvailable = getOfficialCoverage().temas.reduce(
+    (total, topic) => total + topic.porConfianza.alta,
+    0,
+  );
 
   let weakTopicsCount: number | null = null;
 
@@ -303,6 +314,8 @@ export async function getHomeStudyStats(
     overallAccuracy,
     mistakesToReview: failedQuestionsAvailable,
     weakTopicsCount,
+    trainingQuestionsSeen,
+    trainingQuestionsAvailable,
     latestSession,
     inProgressSession,
     totalQuestionsAnswered: attempts.length,

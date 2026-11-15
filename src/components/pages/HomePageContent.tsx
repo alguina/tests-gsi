@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { discardTest } from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useProfile } from "@/components/profile/ProfileProvider";
@@ -20,6 +20,7 @@ import {
   formatTopicDisplayList,
 } from "@/lib/topics/formatTopicDisplay";
 import { TEST_MODE_EXAM } from "@/lib/testSession";
+import { useStudyProgress } from "@/lib/useStudyProgress";
 
 type HomePageContentProps = {
   stats: Awaited<ReturnType<typeof getHomeStudyStats>>;
@@ -41,6 +42,7 @@ function formatMetricValue(
 export function HomePageContent({ stats, recommendation }: HomePageContentProps) {
   const { t } = useI18n();
   const { profile } = useProfile();
+  const studyProgress = useStudyProgress(profile?.id);
 
   const heroTitle = profile?.name
     ? t("home.greeting", { name: profile.name })
@@ -49,6 +51,14 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
   const hasRecommendationData = stats.questionsAnswered > 0;
   const suggestedCount = recommendation?.suggestedCount ?? RECOMMENDED_DEFAULT_COUNT;
   const notEnoughData = t("home.notEnoughData");
+  const studySummary = useMemo(() => {
+    const entries = Object.entries(studyProgress);
+    const completed = entries.filter(([, item]) => item.status === "completed").length;
+    const lastTopic = entries.sort(([, left], [, right]) =>
+      right.updatedAt.localeCompare(left.updatedAt),
+    )[0]?.[0];
+    return { completed, lastTopic };
+  }, [studyProgress]);
 
   return (
     <PageContainer>
@@ -58,13 +68,12 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
         title={heroTitle}
         description={t("home.description")}
         className="overflow-visible"
-        actions={
-          <HomeTrainingMenu
-            recommendedCount={suggestedCount}
-            fullWidth
-            className="w-full sm:w-auto"
-          />
-        }
+        actions={<HomePrimaryActions
+          studyCompleted={studySummary.completed}
+          studyHref={studySummary.lastTopic ? `/study/${studySummary.lastTopic}` : "/study"}
+          trainingSeen={stats.trainingQuestionsSeen}
+          trainingAvailable={stats.trainingQuestionsAvailable}
+        />}
       />
 
       {stats.inProgressSession ? (
@@ -142,6 +151,82 @@ export function HomePageContent({ stats, recommendation }: HomePageContentProps)
         <ProgressLinksCard />
       </section>
     </PageContainer>
+  );
+}
+
+function HomePrimaryActions({
+  studyCompleted,
+  studyHref,
+  trainingSeen,
+  trainingAvailable,
+}: {
+  studyCompleted: number;
+  studyHref: string;
+  trainingSeen: number;
+  trainingAvailable: number;
+}) {
+  const { t } = useI18n();
+  const studyPercent = Math.round((studyCompleted / 57) * 100);
+  const trainingPercent = trainingAvailable > 0
+    ? Math.round((trainingSeen / trainingAvailable) * 100)
+    : 0;
+
+  return (
+    <div className="grid w-full grid-cols-2 gap-3">
+      <HomeActionCard
+        title={t("home.studyAction")}
+        progressLabel={t("home.studyProgressValue", { completed: studyCompleted, total: 57 })}
+        percent={studyPercent}
+        href={studyHref}
+        actionLabel={studyCompleted > 0 ? t("study.continue") : t("home.startStudying")}
+      />
+      <HomeActionCard
+        title={t("home.trainAction")}
+        progressLabel={t("home.trainingProgressValue", { seen: trainingSeen, total: trainingAvailable })}
+        percent={trainingPercent}
+        href="/train"
+        actionLabel={t("training.start")}
+      />
+    </div>
+  );
+}
+
+function HomeActionCard({
+  title,
+  progressLabel,
+  percent,
+  href,
+  actionLabel,
+}: {
+  title: string;
+  progressLabel: string;
+  percent: number;
+  href: string;
+  actionLabel: string;
+}) {
+  const boundedPercent = Math.max(0, Math.min(100, percent));
+
+  return (
+    <Card as="article" padding="sm" className="min-w-0">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-base font-semibold text-text-primary">{title}</h2>
+        <span className="text-xs font-medium tabular-nums text-text-muted">{boundedPercent}%</span>
+      </div>
+      <p className="mt-1 truncate text-xs text-text-secondary">{progressLabel}</p>
+      <div
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-muted"
+        role="progressbar"
+        aria-label={title}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={boundedPercent}
+      >
+        <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${boundedPercent}%` }} />
+      </div>
+      <Button href={href} size="sm" className="mt-3 w-full">
+        {actionLabel}
+      </Button>
+    </Card>
   );
 }
 
