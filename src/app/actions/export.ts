@@ -11,6 +11,7 @@ import { buildMarkdownExport } from "@/lib/exports/buildExport";
 import type { ExportDocument, ExportType } from "@/lib/exports/types";
 import { PROFILE_COOKIE_NAME } from "@/lib/profile/profileStore";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { TEMARIO_OFICIAL } from "@/lib/officialTopics";
 
 async function resolveUserId(clientUserId?: string): Promise<string> {
   if (clientUserId) {
@@ -65,43 +66,11 @@ export async function listExportTopicsAction(
   userId?: string,
 ): Promise<Array<{ topic: string; topicTitle: string | null }>> {
   try {
-    const resolvedUserId = await resolveUserId(userId);
-    const supabase = createServerSupabaseClient();
-    const { data } = await supabase
-      .from("questions")
-      .select("topic, block")
-      .eq("is_active", true)
-      .not("topic", "is", null);
-
-    const topics = new Map<string, Map<string, number>>();
-
-    for (const row of data ?? []) {
-      const topic = String(row.topic ?? "").trim();
-      const block = String(row.block ?? "").trim();
-
-      if (!topic) {
-        continue;
-      }
-
-      const titles = topics.get(topic) ?? new Map<string, number>();
-
-      if (block) {
-        titles.set(block, (titles.get(block) ?? 0) + 1);
-      }
-
-      topics.set(topic, titles);
-    }
-
-    return [...topics.entries()]
-      .map(([topic, titles]) => ({
-        topic,
-        topicTitle:
-          [...titles.entries()].sort((left, right) => right[1] - left[1])[0]?.[0] ??
-          null,
-      }))
-      .sort((left, right) =>
-        left.topic.localeCompare(right.topic, "es", { numeric: true }),
-      );
+    await resolveUserId(userId);
+    return TEMARIO_OFICIAL.map((item) => ({
+      topic: `${item.bloque}.${item.tema}`,
+      topicTitle: item.titulo,
+    }));
   } catch {
     return [];
   }
