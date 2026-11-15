@@ -16,10 +16,8 @@ import {
   TableWrap,
 } from "@/components/ui/Table";
 import { useI18n } from "@/lib/i18n/useI18n";
-import type { RecommendationReason } from "@/lib/recommendations/types";
 import { formatScore } from "@/lib/stats/formatScore";
 import type { DashboardStudyMetrics } from "@/lib/studyMetrics";
-import { formatTopicDisplayLabel } from "@/lib/topics/formatTopicDisplay";
 import { cn } from "@/lib/ui/cn";
 
 type DashboardPageContentProps = {
@@ -31,8 +29,39 @@ function formatTopicLabel(
   topic: string,
   topicTitle: string | null,
 ): string {
-  const label = formatTopicDisplayLabel({ topic, topicTitle });
-  return label || t("topics.noTopic");
+  return topicTitle ? `${topic} · ${topicTitle}` : topic || t("topics.noTopic");
+}
+
+function TopicRanking({
+  title,
+  topics,
+  emptyText,
+  t,
+}: {
+  title: string;
+  topics: DashboardStudyMetrics["topicPerformance"];
+  emptyText: string;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}) {
+  return (
+    <Card as="article">
+      <h2 className="text-base font-medium tracking-tight text-text-primary">{title}</h2>
+      {topics.length ? (
+        <ul className="mt-3 space-y-2">
+          {topics.map((topic) => (
+            <li key={topic.topic} className="flex items-center justify-between gap-3 rounded-md bg-surface-muted px-3 py-2">
+              <Link href={`/test?mode=official-topic&topic=${encodeURIComponent(topic.topic)}&count=25`} className="text-sm text-text-primary hover:underline">
+                {formatTopicLabel(t, topic.topic, topic.topicTitle)}
+              </Link>
+              <span className="shrink-0 text-sm font-semibold text-text-primary">{topic.accuracy}%</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-2 text-sm text-text-secondary">{emptyText}</p>
+      )}
+    </Card>
+  );
 }
 
 function Sparkline({
@@ -79,6 +108,15 @@ function Sparkline({
 
 export function DashboardPageContent({ metrics }: DashboardPageContentProps) {
   const { t } = useI18n();
+  const rankedTopics = metrics.topicPerformance.filter(
+    (topic) => topic.correct + topic.wrong >= 3 && topic.accuracy !== null,
+  );
+  const strongestTopics = [...rankedTopics]
+    .sort((left, right) => (right.accuracy ?? 0) - (left.accuracy ?? 0))
+    .slice(0, 5);
+  const weakestTopics = [...rankedTopics]
+    .sort((left, right) => (left.accuracy ?? 0) - (right.accuracy ?? 0))
+    .slice(0, 5);
 
   return (
     <PageContainer>
@@ -241,7 +279,7 @@ export function DashboardPageContent({ metrics }: DashboardPageContentProps) {
                   className="flex items-center justify-between gap-3 rounded-md bg-surface-muted px-3 py-2"
                 >
                   <Link
-                    href={`/test?mode=topic&topic=${encodeURIComponent(item.topic)}&count=25&filter=failed`}
+                    href={`/test?mode=official-topic&topic=${encodeURIComponent(item.topic)}&count=25`}
                     className="text-sm text-text-primary hover:underline"
                   >
                     {formatTopicLabel(t, item.topic, item.topicTitle)}
@@ -258,6 +296,11 @@ export function DashboardPageContent({ metrics }: DashboardPageContentProps) {
             </p>
           )}
         </Card>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <TopicRanking title={t("dashboard.strongestTopics")} topics={strongestTopics} emptyText={t("dashboard.notEnoughTopicData")} t={t} />
+        <TopicRanking title={t("dashboard.weakestTopics")} topics={weakestTopics} emptyText={t("dashboard.notEnoughTopicData")} t={t} />
       </section>
 
       <Card as="section">
@@ -287,7 +330,7 @@ export function DashboardPageContent({ metrics }: DashboardPageContentProps) {
                   <TableRow key={topic.topic}>
                     <TableCell>
                       <Link
-                        href={`/test?mode=topic&topic=${encodeURIComponent(topic.topic)}&count=25`}
+                        href={`/test?mode=official-topic&topic=${encodeURIComponent(topic.topic)}&count=25`}
                         className="hover:underline"
                       >
                         {formatTopicLabel(t, topic.topic, topic.topicTitle)}
