@@ -13,6 +13,7 @@ import { computeBucketTargets } from "@/lib/recommendations/priorityScore";
 import type { StudyRecommendation } from "@/lib/recommendations/types";
 import { RECENT_REPETITION_DAYS } from "@/lib/recommendations/constants";
 import { TEST_MODE_OFFICIAL_TOPIC } from "@/lib/testSession";
+import { getReliableOfficialTopic } from "@/lib/officialTopics";
 
 export async function buildStudyRecommendation(
   userId: string,
@@ -43,7 +44,16 @@ export async function buildStudyRecommendation(
         .limit(5),
     ]);
 
-  const questions = (questionsResult.data ?? []).filter((question) => question.topic);
+  const questions = (questionsResult.data ?? []).flatMap((question) => {
+    const official = getReliableOfficialTopic(question.id as string);
+    return official
+      ? [{
+          id: question.id,
+          topic: `${official.bloque}.${official.tema}`,
+          block: official.titulo,
+        }]
+      : [];
+  });
   const attempts = attemptsResult.data ?? [];
   const bookmarkedQuestionIds = new Set(
     (bookmarksResult.data ?? []).map((row) => row.question_id as string),
@@ -83,8 +93,10 @@ export async function buildStudyRecommendation(
     topicStats.set(topic, stats);
   }
 
+  const questionsById = new Map(questions.map((question) => [question.id, question]));
+
   for (const attempt of attempts) {
-    const question = questions.find((row) => row.id === attempt.question_id);
+    const question = questionsById.get(attempt.question_id);
     const topic = String(question?.topic ?? "").trim();
 
     if (!topic) {
