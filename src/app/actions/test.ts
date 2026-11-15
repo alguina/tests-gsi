@@ -20,7 +20,7 @@ import {
   type QuestionExplanationMap,
 } from "@/lib/questionExplanations";
 import { PROFILE_COOKIE_NAME } from "@/lib/profile/profileStore";
-import type { TestDraftState, TopicQuestionFilter } from "@/lib/testDraft";
+import type { TestDraftState } from "@/lib/testDraft";
 import {
   countExplainedQuestionsAvailable,
   countFailedQuestions,
@@ -35,7 +35,6 @@ import {
   startFailedQuestionsSession,
   startRandomTestSession,
   startRecommendedTestSession,
-  startTopicTestSession,
   startOfficialTopicTestSession,
   submitTestSession,
   type ExamTestResult,
@@ -91,26 +90,6 @@ export async function startExplainedQuestionsTest(
   try {
     const resolvedUserId = await resolveUserId(userId);
     const data = await startExplainedQuestionsSession(count, resolvedUserId);
-    return actionOk(data);
-  } catch (error) {
-    return toActionError(error);
-  }
-}
-
-export async function startTopicTest(
-  topic: string,
-  count: number | "all",
-  filter: TopicQuestionFilter,
-  userId?: string,
-): Promise<ActionResult<StartedTestSession>> {
-  try {
-    const resolvedUserId = await resolveUserId(userId);
-    const data = await startTopicTestSession(
-      topic,
-      count,
-      filter,
-      resolvedUserId,
-    );
     return actionOk(data);
   } catch (error) {
     return toActionError(error);
