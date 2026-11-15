@@ -5,13 +5,10 @@ import { useEffect, useMemo, useState } from "react";
 import { loadExplainedQuestionsCount, loadFailedQuestionsCount, loadStudyRecommendation } from "@/app/actions/test";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useProfile } from "@/components/profile/ProfileProvider";
-import {
-  QUESTION_COUNT_PILL_CLASS,
-  QuestionCountSelector,
-} from "@/components/training/QuestionCountSelector";
+import { QuestionCountSelector } from "@/components/training/QuestionCountSelector";
 import { TrainingModePanel } from "@/components/training/TrainingModePanel";
-import { SelectableOption } from "@/components/ui/SelectableOption";
 import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
 import { TabPanel, Tabs } from "@/components/ui/Tabs";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useI18n } from "@/lib/i18n/useI18n";
@@ -19,7 +16,6 @@ import { formatRecommendationReason } from "@/lib/recommendations/formatReasons"
 import { RECOMMENDED_DEFAULT_COUNT } from "@/lib/recommendations/constants";
 import type { StudyRecommendation } from "@/lib/recommendations/types";
 import type { TopicSummary } from "@/lib/studyMetrics";
-import type { TopicQuestionFilter } from "@/lib/testDraft";
 import {
   EXAM_DEFAULT_QUESTION_COUNT,
   EXAM_DEFAULT_TIME_LIMIT_SECONDS,
@@ -28,10 +24,10 @@ import {
   EXPLAINED_QUESTION_COUNTS,
   FAILED_QUESTION_COUNTS,
   TEST_QUESTION_COUNTS,
-  TOPIC_QUESTION_COUNTS,
 } from "@/lib/testSession";
 
 const RECOMMENDED_QUESTION_COUNTS = [10, 25, 50] as const;
+const OFFICIAL_TOPIC_QUESTION_COUNTS = [10, 25, 50] as const;
 
 const TRAIN_TABS = [
   "random",
@@ -64,9 +60,7 @@ export function TrainPageContent({
   const initialTab = tabParam === "failed" ? "mistakes" : tabParam;
   const { profile } = useProfile();
 
-  const [activeTab, setActiveTab] = useState<TrainTabId>(
-    isTrainTab(initialTab) ? initialTab : "random",
-  );
+  const activeTab: TrainTabId = isTrainTab(initialTab) ? initialTab : "random";
   const [selectedCount, setSelectedCount] = useState<number>(10);
   const [failedCount, setFailedCount] = useState<number | null>(null);
   const [explainedCount, setExplainedCount] = useState<number | null>(null);
@@ -89,13 +83,9 @@ export function TrainPageContent({
     EXAM_DEFAULT_TIME_LIMIT_SECONDS / 60,
   );
   const [selectedTopic, setSelectedTopic] = useState<string>(
-    topics[0]?.topic ?? "",
+    topics.find((topic) => topic.totalQuestions > 0)?.topic ?? "",
   );
-  const [selectedTopicCount, setSelectedTopicCount] = useState<number | "all">(
-    10,
-  );
-  const [selectedTopicFilter, setSelectedTopicFilter] =
-    useState<TopicQuestionFilter>("all");
+  const [selectedTopicCount, setSelectedTopicCount] = useState<number>(10);
   const [hasRecommendationDataState, setHasRecommendationDataState] =
     useState(false);
 
@@ -115,18 +105,6 @@ export function TrainPageContent({
   );
 
   useEffect(() => {
-    if (isTrainTab(initialTab)) {
-      setActiveTab(initialTab);
-    }
-  }, [initialTab]);
-
-  useEffect(() => {
-    if (topics.length && !selectedTopic) {
-      setSelectedTopic(topics[0].topic);
-    }
-  }, [selectedTopic, topics]);
-
-  useEffect(() => {
     void loadFailedQuestionsCount(profile?.id).then(setFailedCount);
     void loadExplainedQuestionsCount().then(setExplainedCount);
     void loadStudyRecommendation(profile?.id, RECOMMENDED_DEFAULT_COUNT).then(
@@ -144,7 +122,6 @@ export function TrainPageContent({
       return;
     }
 
-    setActiveTab(tabId);
     router.replace(`/train?tab=${tabId}`, { scroll: false });
   }
 
@@ -170,7 +147,7 @@ export function TrainPageContent({
     }
 
     router.push(
-      `/test?mode=topic&topic=${encodeURIComponent(selectedTopic)}&count=${selectedTopicCount}&filter=${selectedTopicFilter}`,
+      `/test?mode=official-topic&topic=${encodeURIComponent(selectedTopic)}&count=${selectedTopicCount}`,
     );
   }
 
@@ -355,42 +332,31 @@ export function TrainPageContent({
                 <p className="text-sm font-medium text-text-primary">
                   {t("test.topicLabel")}
                 </p>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {topics.map((topic) => (
-                    <SelectableOption
-                      key={topic.topic}
-                      selected={selectedTopic === topic.topic}
-                      onClick={() => setSelectedTopic(topic.topic)}
-                      className={`${QUESTION_COUNT_PILL_CLASS} text-left`}
-                    >
-                      {topic.displayLabel.trim() || t("topics.noTopic")}
-                    </SelectableOption>
+                <Select
+                  className="mt-3 w-full"
+                  value={selectedTopic}
+                  onChange={(event) => setSelectedTopic(event.target.value)}
+                >
+                  {["I", "II", "III", "IV"].map((block) => (
+                    <optgroup key={block} label={t("officialSyllabus.block", { bloque: block })}>
+                      {topics.filter((topic) => topic.topic.startsWith(`${block}.`)).map((topic) => (
+                        <option
+                          key={topic.topic}
+                          value={topic.topic}
+                          disabled={topic.totalQuestions === 0}
+                        >
+                          {topic.displayLabel}{topic.totalQuestions === 0 ? ` · ${t("officialSyllabus.noHighQuestions")}` : ""}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
-                </div>
+                </Select>
                 <QuestionCountSelector
                   label={t("test.numberOfQuestions")}
-                  options={TOPIC_QUESTION_COUNTS}
+                  options={OFFICIAL_TOPIC_QUESTION_COUNTS}
                   value={selectedTopicCount}
                   onChange={setSelectedTopicCount}
                 />
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {(
-                    [
-                      ["all", "test.topicFilterAll"],
-                      ["failed", "test.topicFilterFailed"],
-                      ["unseen", "test.topicFilterUnseen"],
-                    ] as const
-                  ).map(([filter, labelKey]) => (
-                    <SelectableOption
-                      key={filter}
-                      selected={selectedTopicFilter === filter}
-                      onClick={() => setSelectedTopicFilter(filter)}
-                      className={QUESTION_COUNT_PILL_CLASS}
-                    >
-                      {t(labelKey)}
-                    </SelectableOption>
-                  ))}
-                </div>
               </>
             ) : undefined
           }

@@ -10,7 +10,6 @@ import {
   startFailedQuestionsTest,
   startRandomTest,
   startRecommendedTest,
-  startTopicTest,
   startOfficialTopicTest,
   submitTest,
 } from "@/app/actions/test";
@@ -29,7 +28,6 @@ import {
   touchDraftState,
   writeLocalDraftCache,
   type TestDraftState,
-  type TopicQuestionFilter,
 } from "@/lib/testDraft";
 import {
   TEST_QUESTION_COUNTS,
@@ -44,10 +42,9 @@ type TestPhase = "setup" | "taking" | "results";
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export type TestAutoStart = {
-  mode: "random" | "failed" | "topic" | "recommended" | "explained" | "official-topic";
+  mode: "random" | "failed" | "recommended" | "explained" | "official-topic";
   count: number | "all";
   topic?: string;
-  filter?: TopicQuestionFilter;
 };
 
 /** absent key = unanswered, null = blank, string = selected letter */
@@ -222,13 +219,6 @@ export function TestPageContent({
           }
 
           started = await startRecommendedTest(config.count, profileId);
-        } else if (config.mode === "topic" && config.topic) {
-          started = await startTopicTest(
-            config.topic,
-            config.count,
-            config.filter ?? "all",
-            profileId,
-          );
         } else {
           if (typeof config.count !== "number") {
             setLoadError(mapTestErrorCode("INVALID_QUESTION_COUNT", t));

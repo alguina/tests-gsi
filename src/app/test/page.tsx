@@ -1,11 +1,9 @@
 import { TestPageContent } from "@/components/pages/TestPageContent";
-import type { TopicQuestionFilter } from "@/lib/testDraft";
 import { RECOMMENDED_DEFAULT_COUNT } from "@/lib/recommendations/constants";
 import {
   EXPLAINED_QUESTION_COUNTS,
   FAILED_QUESTION_COUNTS,
   TEST_QUESTION_COUNTS,
-  TOPIC_QUESTION_COUNTS,
 } from "@/lib/testSession";
 
 type TestPageProps = {
@@ -33,14 +31,6 @@ function parseCount(
   const count = Number(value);
 
   return allowed.includes(count) ? count : undefined;
-}
-
-function parseFilter(value: string | undefined): TopicQuestionFilter {
-  if (value === "failed" || value === "unseen") {
-    return value;
-  }
-
-  return "all";
 }
 
 export default async function TestPage({ searchParams }: TestPageProps) {
@@ -78,23 +68,6 @@ export default async function TestPage({ searchParams }: TestPageProps) {
       return (
         <TestPageContent
           autoStart={{ mode: "explained", count }}
-        />
-      );
-    }
-  }
-
-  if (mode === "topic" && params.topic) {
-    const count = parseCount(params.count, TOPIC_QUESTION_COUNTS);
-
-    if (count !== undefined) {
-      return (
-        <TestPageContent
-          autoStart={{
-            mode: "topic",
-            count,
-            topic: params.topic,
-            filter: parseFilter(params.filter),
-          }}
         />
       );
     }

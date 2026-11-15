@@ -12,6 +12,9 @@ export type TopicDisplayInput = {
 const POOR_LABEL_PATTERN = /^(A\d+|B\d+|\d+)$/i;
 
 export function formatTopicDisplayLabel(input: TopicDisplayInput): string {
+  if (/^(I|II|III|IV)\.\d+$/.test(input.topic.trim()) && input.topicTitle?.trim()) {
+    return `${input.topic.trim()} · ${input.topicTitle.trim()}`;
+  }
   const resolved = resolveTopicLabel({
     topic: input.topic,
     block: input.block ?? input.topicTitle ?? null,

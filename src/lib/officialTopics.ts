@@ -1,5 +1,6 @@
 import topicMapRaw from "@/data/topic-map-v2.json";
 import topicMapDistinctRaw from "@/data/topic-map-v2-distinct.json";
+import canonicalRaw from "@/data/question-canonical-v1.json";
 import temarioRaw from "@/data/gsi-temario-oficial.json";
 
 /**
@@ -58,6 +59,7 @@ type EntradaMapa = [string | null, number | null, string];
 
 const topicMap = topicMapRaw as unknown as Record<string, EntradaMapa>;
 const topicMapDistinct = topicMapDistinctRaw as unknown as Record<string, EntradaMapa>;
+const canonical = canonicalRaw as Record<string, string>;
 
 function toAsignacion(entry: EntradaMapa): AsignacionOficial | null {
   const [bloque, temaN, confianzaRaw] = entry;
@@ -75,6 +77,21 @@ export function getOfficialTopic(questionId: string): AsignacionOficial | null {
   const entry = topicMap[questionId];
   if (!entry) return null;
   return toAsignacion(entry);
+}
+
+/** Identificador representativo de una pregunta, compartido por sus duplicados importados. */
+export function getCanonicalQuestionId(questionId: string): string {
+  return canonical[questionId] ?? questionId;
+}
+
+/** Tema utilizable en tests y metricas: solo asignaciones de confianza alta o revisadas. */
+export function getReliableOfficialTopic(
+  questionId: string,
+): AsignacionOficial | null {
+  const topic = getOfficialTopic(getCanonicalQuestionId(questionId));
+  return topic && (topic.confianza === "alta" || topic.confianza === "revisada")
+    ? topic
+    : null;
 }
 
 /** Una asignacion solo debe mostrarse como fiable tras revision humana. */

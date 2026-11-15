@@ -105,7 +105,7 @@ export const en: Dictionary = {
     "No explanations loaded yet. Run the migration and seed in Supabase.",
   "training.byTopicTitle": "Train by topic",
   "training.byTopicDescription":
-    "Pick a specific topic to practice.",
+    "Choose one of the 57 official syllabus topics. These tests are tracked separately and do not alter your general training statistics.",
   "training.simulationTitle": "Exam simulation",
   "training.simulationDescription":
     "Take a test under conditions closer to the real exam.",
@@ -148,7 +148,7 @@ export const en: Dictionary = {
   "officialSyllabus.eyebrow": "Proposal under review",
   "officialSyllabus.title": "Official syllabus (BOE)",
   "officialSyllabus.description":
-    "Question bank coverage by official GSI A2 topic (Annex IX, BOE-A-2025-26262). Automatic assignment pending review: it does not change current topics or your metrics.",
+    "Question bank coverage and results across the 57 official GSI A2 topics (Annex IX, BOE-A-2025-26262). The automatic assignment is still pending review.",
   "officialSyllabus.banner":
     "Automatic proposal, not reviewed. Only high confidence is indicative; medium and low require review before use.",
   "officialSyllabus.block": "Block {bloque}",
@@ -287,6 +287,9 @@ export const en: Dictionary = {
   "dashboard.noTopicsYet": "Import questions to see topic performance.",
   "dashboard.performanceOverTime": "Performance over time",
   "dashboard.accuracyByTopic": "Accuracy by topic",
+  "dashboard.strongestTopics": "Strongest topics",
+  "dashboard.weakestTopics": "Weakest topics",
+  "dashboard.notEnoughTopicData": "You need at least 3 non-blank answers in a topic before it can be compared.",
   "dashboard.netScoreTrend": "Net score trend",
   "dashboard.mostFailedTopics": "Most failed topics",
   "dashboard.failedTopicWithTitle": "Topic {topic} — {title}",
