@@ -105,7 +105,7 @@ export const es: Dictionary = {
     "Aún no hay explicaciones cargadas. Ejecuta la migración y el seed en Supabase.",
   "training.byTopicTitle": "Entrenar por tema",
   "training.byTopicDescription":
-    "Elige un tema concreto para practicar.",
+    "Elige uno de los 57 temas oficiales del temario. Estos tests se guardan en una métrica separada y no alteran tus estadísticas generales.",
   "training.simulationTitle": "Simulación de examen",
   "training.simulationDescription":
     "Haz un test en condiciones más parecidas al examen.",
@@ -148,7 +148,7 @@ export const es: Dictionary = {
   "officialSyllabus.eyebrow": "Propuesta en revisión",
   "officialSyllabus.title": "Temario oficial (BOE)",
   "officialSyllabus.description":
-    "Cobertura del banco de preguntas por tema oficial del GSI A2 (Anexo IX, BOE-A-2025-26262). Asignación automática pendiente de revisión: no cambia los temas actuales ni tus métricas.",
+    "Cobertura y resultados del banco de preguntas según los 57 temas oficiales del GSI A2 (Anexo IX, BOE-A-2025-26262). La asignación automática sigue pendiente de revisión.",
   "officialSyllabus.banner":
     "Propuesta automática sin revisar. Solo la confianza alta es orientativa; media y baja requieren revisión antes de usarse.",
   "officialSyllabus.block": "Bloque {bloque}",
@@ -287,6 +287,9 @@ export const es: Dictionary = {
   "dashboard.noTopicsYet": "Importa preguntas para ver el rendimiento por tema.",
   "dashboard.performanceOverTime": "Rendimiento en el tiempo",
   "dashboard.accuracyByTopic": "Precisión por tema",
+  "dashboard.strongestTopics": "Temas en los que vas mejor",
+  "dashboard.weakestTopics": "Temas en los que vas peor",
+  "dashboard.notEnoughTopicData": "Necesitas al menos 3 respuestas no en blanco en un tema para compararlo.",
   "dashboard.netScoreTrend": "Tendencia de nota neta",
   "dashboard.mostFailedTopics": "Temas con más fallos",
   "dashboard.failedTopicWithTitle": "Tema {topic} — {title}",
