@@ -1,4 +1,5 @@
 import { computeTopicWeakness } from "@/lib/recommendations/questionSignals";
+import { isGeneralTrainingMode } from "@/lib/testSession";
 
 export type PerformanceTrendPoint = {
   date: string;
@@ -115,7 +116,7 @@ export function buildPerformanceTrend(
   const trainingSessions = sessions
     .filter(
       (session) =>
-        session.completed_at && session.mode !== "exam_simulation",
+        session.completed_at && isGeneralTrainingMode(session.mode),
     )
     .sort((left, right) =>
       String(left.completed_at).localeCompare(String(right.completed_at)),

@@ -14,7 +14,7 @@ import {
   normalizeNetScoreTo100,
 } from "@/lib/stats/userMetrics";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { TEST_MODE_EXAM } from "@/lib/testSession";
+import { TEST_MODE_EXAM, TEST_MODE_OFFICIAL_TOPIC } from "@/lib/testSession";
 
 function defaultDateRange(): { from: string; to: string } {
   const to = new Date();
@@ -28,9 +28,10 @@ async function loadAttemptsInRange(userId: string, from: string, to: string) {
   const { data } = await supabase
     .from("attempts")
     .select(
-      "question_id, is_correct, is_blank, answered_at, questions(text, topic, block, year, exam, sources(title))",
+      "question_id, is_correct, is_blank, answered_at, questions(text, topic, block, year, exam, sources(title)), test_sessions!inner(mode)",
     )
     .eq("user_id", userId)
+    .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC)
     .gte("answered_at", from)
     .lte("answered_at", to);
 
@@ -52,7 +53,8 @@ export async function buildWeeklyReportExport(
         .not("completed_at", "is", null)
         .gte("completed_at", range.from)
         .lte("completed_at", range.to)
-        .neq("mode", TEST_MODE_EXAM),
+        .neq("mode", TEST_MODE_EXAM)
+        .neq("mode", TEST_MODE_OFFICIAL_TOPIC),
       loadAttemptsInRange(request.userId, range.from, range.to),
       supabase.from("questions").select("id, topic, block").eq("is_active", true),
       buildStudyRecommendation(request.userId),
@@ -181,12 +183,13 @@ export async function buildErrorsByTopicExport(
   const supabase = createServerSupabaseClient();
   const topic = request.topic?.trim();
 
-  let query = supabase
+  const query = supabase
     .from("attempts")
     .select(
-      "question_id, selected_letter, is_correct, is_blank, answered_at, correct_letter, questions(text, topic, block, year, exam, answers(letter, text, is_correct), sources(title))",
+      "question_id, selected_letter, is_correct, is_blank, answered_at, correct_letter, questions(text, topic, block, year, exam, answers(letter, text, is_correct), sources(title)), test_sessions!inner(mode)",
     )
     .eq("user_id", request.userId)
+    .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC)
     .eq("is_blank", false)
     .eq("is_correct", false)
     .order("answered_at", { ascending: false });

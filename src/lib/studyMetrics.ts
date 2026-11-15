@@ -12,7 +12,8 @@ import {
 import {
   countFailedQuestions,
   getInProgressSession,
-  TEST_MODE_EXAM,
+  TEST_MODE_OFFICIAL_TOPIC,
+  isGeneralTrainingMode,
   type InProgressSession,
 } from "@/lib/testSession";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -127,8 +128,9 @@ export async function getHomeStudyStats(
     await Promise.all([
       supabase
         .from("attempts")
-        .select("id, is_correct, is_blank")
-        .eq("user_id", userId),
+        .select("id, is_correct, is_blank, test_sessions!inner(mode)")
+        .eq("user_id", userId)
+        .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC),
       supabase
         .from("test_sessions")
         .select(
@@ -144,11 +146,8 @@ export async function getHomeStudyStats(
   const attempts = attemptsResult.error ? [] : (attemptsResult.data ?? []);
   const sessions = sessionsResult.error ? [] : (sessionsResult.data ?? []);
   const completedSessions = sessions.filter((session) => session.completed_at);
-  const latestRaw = completedSessions[0];
-
-  const trainingSessions = completedSessions.filter(
-    (session) => session.mode !== TEST_MODE_EXAM,
-  );
+  const trainingSessions = completedSessions.filter((session) => isGeneralTrainingMode(session.mode));
+  const latestRaw = trainingSessions[0];
   const recentFive = trainingSessions.slice(0, 5);
 
   const answeredNonBlank = attempts.filter((attempt) => !attempt.is_blank);
@@ -210,12 +209,14 @@ export async function getDashboardStats(
         .not("completed_at", "is", null),
       supabase
         .from("attempts")
-        .select("is_correct, is_blank")
-        .eq("user_id", userId),
+        .select("is_correct, is_blank, test_sessions!inner(mode)")
+        .eq("user_id", userId)
+        .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC),
       supabase
         .from("attempts")
-        .select("question_id, is_correct, is_blank, questions(topic, block)")
+        .select("question_id, is_correct, is_blank, questions(topic, block), test_sessions!inner(mode)")
         .eq("user_id", userId)
+        .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC)
         .eq("is_correct", false)
         .eq("is_blank", false),
     ],
@@ -270,9 +271,7 @@ export async function getDashboardStats(
     .sort((left, right) => right.count - left.count)
     .slice(0, 5);
 
-  const trainingSessions = sessions.filter(
-    (session) => session.mode !== TEST_MODE_EXAM,
-  );
+  const trainingSessions = sessions.filter((session) => isGeneralTrainingMode(session.mode));
 
   return {
     totalSessions: trainingSessions.length,
@@ -312,8 +311,9 @@ export async function getDashboardStudyMetrics(
       .not("completed_at", "is", null),
     supabase
       .from("attempts")
-      .select("question_id, is_correct, is_blank, answered_at")
-      .eq("user_id", userId),
+      .select("question_id, is_correct, is_blank, answered_at, test_sessions!inner(mode)")
+      .eq("user_id", userId)
+      .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC),
     supabase.from("questions").select("id, topic, block").not("topic", "is", null),
     supabase
       .from("question_bookmarks")
@@ -348,9 +348,7 @@ export async function getDashboardStudyMetrics(
     eligibleQuestions.length - uniqueQuestionsSeen,
   );
 
-  const trainingSessions = sessions.filter(
-    (session) => session.mode !== TEST_MODE_EXAM,
-  );
+  const trainingSessions = sessions.filter((session) => isGeneralTrainingMode(session.mode));
   const normalizedSessionGrades = trainingSessions
     .map((session) => {
       const answered =
@@ -429,9 +427,10 @@ export async function getTopicSummaries(
     supabase
       .from("attempts")
       .select(
-        "question_id, is_correct, is_blank, answered_at, questions(topic, block, exam, year, sources(title))",
+        "question_id, is_correct, is_blank, answered_at, questions(topic, block, exam, year, sources(title)), test_sessions!inner(mode)",
       )
       .eq("user_id", userId)
+      .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC)
       .order("answered_at", { ascending: false }),
   ]);
 

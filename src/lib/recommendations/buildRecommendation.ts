@@ -12,6 +12,7 @@ import {
 import { computeBucketTargets } from "@/lib/recommendations/priorityScore";
 import type { StudyRecommendation } from "@/lib/recommendations/types";
 import { RECENT_REPETITION_DAYS } from "@/lib/recommendations/constants";
+import { TEST_MODE_OFFICIAL_TOPIC } from "@/lib/testSession";
 
 export async function buildStudyRecommendation(
   userId: string,
@@ -25,8 +26,9 @@ export async function buildStudyRecommendation(
       supabase.from("questions").select("id, topic, block").eq("is_active", true),
       supabase
         .from("attempts")
-        .select("question_id, is_correct, is_blank, answered_at")
+        .select("question_id, is_correct, is_blank, answered_at, test_sessions!inner(mode)")
         .eq("user_id", userId)
+        .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC)
         .order("answered_at", { ascending: false }),
       supabase
         .from("question_bookmarks")
@@ -34,8 +36,9 @@ export async function buildStudyRecommendation(
         .eq("user_id", userId),
       supabase
         .from("test_sessions")
-        .select("draft_state, completed_at, created_at")
+        .select("draft_state, completed_at, created_at, mode")
         .eq("user_id", userId)
+        .neq("mode", TEST_MODE_OFFICIAL_TOPIC)
         .order("created_at", { ascending: false })
         .limit(5),
     ]);

@@ -1,5 +1,5 @@
 export type NavSection = {
-  id: "home" | "train" | "progress" | "more";
+  id: "home" | "study" | "train" | "progress" | "more";
   href: string;
   labelKey: string;
   matchPaths?: string[];
@@ -15,6 +15,7 @@ export const APP_TITLE_KEY = "app.title";
 
 export const PRIMARY_NAV_SECTIONS: NavSection[] = [
   { id: "home", href: "/", labelKey: "nav.home" },
+  { id: "study", href: "/study", labelKey: "nav.study" },
   {
     id: "train",
     href: "/train",
