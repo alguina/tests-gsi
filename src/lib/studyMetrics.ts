@@ -1,6 +1,5 @@
 import {
   buildPerformanceTrend,
-  buildTopicPerformance,
   computeNetScore,
   computeStudyStreak,
   countActivitySince,
@@ -9,6 +8,12 @@ import {
   type PerformanceTrendPoint,
   type TopicPerformanceRow,
 } from "@/lib/stats/userMetrics";
+import { computeTopicWeakness } from "@/lib/recommendations/questionSignals";
+import {
+  getCanonicalQuestionId,
+  getOfficialCoverage,
+  getReliableOfficialTopic,
+} from "@/lib/officialTopics";
 import {
   countFailedQuestions,
   getInProgressSession,
@@ -17,10 +22,6 @@ import {
   type InProgressSession,
 } from "@/lib/testSession";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import {
-  pickDominantValue,
-  resolveTopicLabel,
-} from "@/lib/topics/resolveTopicLabel";
 
 export type LatestSession = {
   id: string;
@@ -94,6 +95,119 @@ export type TopicSummary = {
   accuracy: number | null;
   priority: "high" | "medium" | "low";
 };
+
+type OfficialMetricAttempt = {
+  question_id: string;
+  is_correct: boolean;
+  is_blank: boolean;
+  answered_at?: string | null;
+};
+
+export function buildOfficialTopicMetrics(attempts: OfficialMetricAttempt[]): {
+  summaries: TopicSummary[];
+  performance: TopicPerformanceRow[];
+} {
+  const totals = new Map<string, {
+    correct: number;
+    wrong: number;
+    blank: number;
+    seen: Set<string>;
+    latestAt: string | null;
+    latestByQuestion: Map<string, { isCorrect: boolean; isBlank: boolean; at: string }>;
+  }>();
+
+  for (const attempt of attempts) {
+    const official = getReliableOfficialTopic(attempt.question_id);
+    if (!official) continue;
+    const key = `${official.bloque}.${official.tema}`;
+    const current = totals.get(key) ?? {
+      correct: 0,
+      wrong: 0,
+      blank: 0,
+      seen: new Set<string>(),
+      latestAt: null,
+      latestByQuestion: new Map(),
+    };
+    const canonicalId = getCanonicalQuestionId(attempt.question_id);
+    const at = attempt.answered_at ?? "";
+    current.seen.add(canonicalId);
+    if (attempt.is_blank) current.blank += 1;
+    else if (attempt.is_correct) current.correct += 1;
+    else current.wrong += 1;
+    if (!current.latestAt || at > current.latestAt) current.latestAt = at || current.latestAt;
+    const previous = current.latestByQuestion.get(canonicalId);
+    if (!previous || at >= previous.at) {
+      current.latestByQuestion.set(canonicalId, {
+        isCorrect: attempt.is_correct,
+        isBlank: attempt.is_blank,
+        at,
+      });
+    }
+    totals.set(key, current);
+  }
+
+  const summaries = getOfficialCoverage().temas.map(({ tema, porConfianza }) => {
+    const key = `${tema.bloque}.${tema.tema}`;
+    const stats = totals.get(key);
+    const correct = stats?.correct ?? 0;
+    const wrong = stats?.wrong ?? 0;
+    const blank = stats?.blank ?? 0;
+    const answered = correct + wrong;
+    const accuracy = answered > 0 ? Math.round((correct / answered) * 1000) / 10 : null;
+    const failedCount = stats
+      ? [...stats.latestByQuestion.values()].filter((row) => !row.isCorrect && !row.isBlank).length
+      : 0;
+    let priority: TopicSummary["priority"] = "low";
+    if (answered === 0 || (accuracy !== null && accuracy < 75)) priority = "medium";
+    if (accuracy !== null && accuracy < 50) priority = "high";
+    return {
+      topic: key,
+      topicTitle: tema.titulo,
+      displayLabel: `${key} · ${tema.titulo}`,
+      description: null,
+      sourceHint: null,
+      rawBlock: null,
+      totalQuestions: porConfianza.alta,
+      answered,
+      correct,
+      wrong,
+      blank,
+      failedCount,
+      accuracy,
+      priority,
+    };
+  });
+
+  const performance = summaries.map((summary) => {
+    const stats = totals.get(summary.topic);
+    const uniqueSeen = stats?.seen.size ?? 0;
+    const answered = summary.correct + summary.wrong;
+    const errorRate = answered > 0 ? Math.round((summary.wrong / answered) * 1000) / 10 : null;
+    const priorityScore = computeTopicWeakness({
+      topic: summary.topic,
+      wrong: summary.wrong,
+      answered,
+      unseenCount: Math.max(0, summary.totalQuestions - uniqueSeen),
+      totalQuestions: summary.totalQuestions,
+    });
+    return {
+      topic: summary.topic,
+      topicTitle: summary.topicTitle,
+      availableQuestions: summary.totalQuestions,
+      uniqueSeen,
+      totalAttempts: summary.correct + summary.wrong + summary.blank,
+      correct: summary.correct,
+      wrong: summary.wrong,
+      blank: summary.blank,
+      accuracy: summary.accuracy,
+      errorRate,
+      lastAttemptedAt: stats?.latestAt ?? null,
+      priorityScore: Math.round(priorityScore * 1000) / 1000,
+    } satisfies TopicPerformanceRow;
+  }).sort((left, right) => right.priorityScore - left.priorityScore);
+
+  return { summaries, performance };
+}
 
 function mapSessionRow(session: {
   id: string;
@@ -200,8 +314,7 @@ export async function getDashboardStats(
 ): Promise<DashboardStats> {
   const supabase = createServerSupabaseClient();
 
-  const [sessionsResult, attemptsResult, failedTopicsResult] = await Promise.all(
-    [
+  const [sessionsResult, attemptsResult] = await Promise.all([
       supabase
         .from("test_sessions")
         .select("mode, net_score, completed_at")
@@ -209,18 +322,10 @@ export async function getDashboardStats(
         .not("completed_at", "is", null),
       supabase
         .from("attempts")
-        .select("is_correct, is_blank, test_sessions!inner(mode)")
+        .select("question_id, is_correct, is_blank, answered_at, test_sessions!inner(mode)")
         .eq("user_id", userId)
         .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC),
-      supabase
-        .from("attempts")
-        .select("question_id, is_correct, is_blank, questions(topic, block), test_sessions!inner(mode)")
-        .eq("user_id", userId)
-        .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC)
-        .eq("is_correct", false)
-        .eq("is_blank", false),
-    ],
-  );
+  ]);
 
   const sessions = sessionsResult.data ?? [];
   const attempts = attemptsResult.data ?? [];
@@ -229,45 +334,15 @@ export async function getDashboardStats(
     (attempt) => attempt.is_correct,
   );
 
-  const topicFailures = new Map<
-    string,
-    { count: number; titles: Map<string, number> }
-  >();
-
-  for (const attempt of failedTopicsResult.data ?? []) {
-    const question = attempt.questions as {
-      topic?: string | null;
-      block?: string | null;
-    } | null;
-
-    const topic = String(question?.topic ?? "").trim();
-    const block = String(question?.block ?? "").trim();
-
-    if (!topic) {
-      continue;
-    }
-
-    const current = topicFailures.get(topic) ?? {
-      count: 0,
-      titles: new Map<string, number>(),
-    };
-    current.count += 1;
-
-    if (block) {
-      current.titles.set(block, (current.titles.get(block) ?? 0) + 1);
-    }
-
-    topicFailures.set(topic, current);
-  }
-
-  const mostFailedTopics = [...topicFailures.entries()]
-    .map(([topic, stats]) => {
-      const topicTitle =
-        [...stats.titles.entries()].sort((left, right) => right[1] - left[1])[0]
-          ?.[0] ?? null;
-
-      return { topic, topicTitle, count: stats.count };
-    })
+  const mostFailedTopics = buildOfficialTopicMetrics(
+    attempts as OfficialMetricAttempt[],
+  ).performance
+    .filter((topic) => topic.wrong > 0)
+    .map((topic) => ({
+      topic: topic.topic,
+      topicTitle: topic.topicTitle,
+      count: topic.wrong,
+    }))
     .sort((left, right) => right.count - left.count)
     .slice(0, 5);
 
@@ -298,7 +373,6 @@ export async function getDashboardStudyMetrics(
   const [
     sessionsResult,
     attemptsResult,
-    questionsResult,
     bookmarksResult,
     eligibleResult,
   ] = await Promise.all([
@@ -314,7 +388,6 @@ export async function getDashboardStudyMetrics(
       .select("question_id, is_correct, is_blank, answered_at, test_sessions!inner(mode)")
       .eq("user_id", userId)
       .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC),
-    supabase.from("questions").select("id, topic, block").not("topic", "is", null),
     supabase
       .from("question_bookmarks")
       .select("id", { count: "exact", head: true })
@@ -324,12 +397,8 @@ export async function getDashboardStudyMetrics(
 
   const sessions = sessionsResult.data ?? [];
   const attempts = attemptsResult.data ?? [];
-  const questions = questionsResult.data ?? [];
   const eligibleIds = new Set(
     (eligibleResult.data ?? []).map((row) => row.question_id as string),
-  );
-  const eligibleQuestions = questions.filter((question) =>
-    eligibleIds.has(question.id as string),
   );
 
   const answeredAttempts = attempts.filter((attempt) => !attempt.is_blank);
@@ -345,7 +414,7 @@ export async function getDashboardStudyMetrics(
   ).size;
   const unseenQuestions = Math.max(
     0,
-    eligibleQuestions.length - uniqueQuestionsSeen,
+    eligibleIds.size - uniqueQuestionsSeen,
   );
 
   const trainingSessions = sessions.filter((session) => isGeneralTrainingMode(session.mode));
@@ -366,10 +435,9 @@ export async function getDashboardStudyMetrics(
   const netScore = computeNetScore(correctTotal, wrongTotal);
   const attemptDates = attempts.map((attempt) => attempt.answered_at as string);
 
-  const topicPerformance = buildTopicPerformance({
-    questions: eligibleQuestions,
-    attempts,
-  });
+  const topicPerformance = buildOfficialTopicMetrics(
+    attempts as OfficialMetricAttempt[],
+  ).performance;
 
   const mostFailedTopics = [...topicPerformance]
     .filter((topic) => topic.wrong > 0)
@@ -418,189 +486,18 @@ export async function getTopicSummaries(
   userId: string,
 ): Promise<TopicSummary[]> {
   const supabase = createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("attempts")
+    .select("question_id, is_correct, is_blank, answered_at, test_sessions!inner(mode)")
+    .eq("user_id", userId)
+    .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC)
+    .order("answered_at", { ascending: false });
 
-  const [questionsResult, attemptsResult] = await Promise.all([
-    supabase
-      .from("questions")
-      .select("id, topic, block, exam, year, sources(title)")
-      .not("topic", "is", null),
-    supabase
-      .from("attempts")
-      .select(
-        "question_id, is_correct, is_blank, answered_at, questions(topic, block, exam, year, sources(title)), test_sessions!inner(mode)",
-      )
-      .eq("user_id", userId)
-      .neq("test_sessions.mode", TEST_MODE_OFFICIAL_TOPIC)
-      .order("answered_at", { ascending: false }),
-  ]);
-
-  if (questionsResult.error) {
-    throw new Error(
-      `Failed to load topic summaries: ${questionsResult.error.message}`,
-    );
+  if (error) {
+    throw new Error(`Failed to load official topic summaries: ${error.message}`);
   }
 
-  const topicMeta = new Map<
-    string,
-    {
-      totalQuestions: number;
-      blocks: Map<string, number>;
-      exams: Map<string, number>;
-      years: Map<string, number>;
-      sourceTitles: Map<string, number>;
-    }
-  >();
-
-  for (const question of questionsResult.data ?? []) {
-    const topic = String(question.topic ?? "").trim();
-    const block = String(question.block ?? "").trim();
-    const exam = String(question.exam ?? "").trim();
-    const year = String(question.year ?? "").trim();
-    const sourceTitle = String(
-      (question.sources as { title?: string | null } | null)?.title ?? "",
-    ).trim();
-
-    if (!topic) {
-      continue;
-    }
-
-    const current = topicMeta.get(topic) ?? {
-      totalQuestions: 0,
-      blocks: new Map<string, number>(),
-      exams: new Map<string, number>(),
-      years: new Map<string, number>(),
-      sourceTitles: new Map<string, number>(),
-    };
-    current.totalQuestions += 1;
-
-    if (block) {
-      current.blocks.set(block, (current.blocks.get(block) ?? 0) + 1);
-    }
-    if (exam) {
-      current.exams.set(exam, (current.exams.get(exam) ?? 0) + 1);
-    }
-    if (year) {
-      current.years.set(year, (current.years.get(year) ?? 0) + 1);
-    }
-    if (sourceTitle) {
-      current.sourceTitles.set(
-        sourceTitle,
-        (current.sourceTitles.get(sourceTitle) ?? 0) + 1,
-      );
-    }
-
-    topicMeta.set(topic, current);
-  }
-
-  const latestByQuestion = new Map<
-    string,
-    { topic: string; isCorrect: boolean; isBlank: boolean }
-  >();
-  const totalsByTopic = new Map<
-    string,
-    { correct: number; wrong: number; blank: number; answered: number }
-  >();
-
-  for (const attempt of attemptsResult.data ?? []) {
-    const question = attempt.questions as {
-      topic?: string | null;
-      block?: string | null;
-    } | null;
-    const topic = String(question?.topic ?? "").trim();
-    const questionId = attempt.question_id as string;
-
-    if (!topic) {
-      continue;
-    }
-
-    if (!latestByQuestion.has(questionId)) {
-      latestByQuestion.set(questionId, {
-        topic,
-        isCorrect: attempt.is_correct === true,
-        isBlank: attempt.is_blank === true,
-      });
-    }
-
-    const totals = totalsByTopic.get(topic) ?? {
-      correct: 0,
-      wrong: 0,
-      blank: 0,
-      answered: 0,
-    };
-
-    if (attempt.is_blank) {
-      totals.blank += 1;
-    } else if (attempt.is_correct) {
-      totals.correct += 1;
-      totals.answered += 1;
-    } else {
-      totals.wrong += 1;
-      totals.answered += 1;
-    }
-
-    totalsByTopic.set(topic, totals);
-  }
-
-  const failedByTopic = new Map<string, number>();
-  for (const [, latest] of latestByQuestion) {
-    if (latest.isCorrect || latest.isBlank) {
-      continue;
-    }
-
-    failedByTopic.set(latest.topic, (failedByTopic.get(latest.topic) ?? 0) + 1);
-  }
-
-  return [...topicMeta.entries()]
-    .map(([topic, meta]) => {
-      const totals = totalsByTopic.get(topic) ?? {
-        correct: 0,
-        wrong: 0,
-        blank: 0,
-        answered: 0,
-      };
-      const accuracy =
-        totals.answered > 0
-          ? Math.round((totals.correct / totals.answered) * 1000) / 10
-          : null;
-
-      let priority: TopicSummary["priority"] = "low";
-      if (totals.answered === 0) {
-        priority = "medium";
-      } else if (accuracy !== null && accuracy < 50) {
-        priority = "high";
-      } else if (accuracy !== null && accuracy < 75) {
-        priority = "medium";
-      }
-
-      const topicTitle = pickDominantValue(meta.blocks);
-      const resolved = resolveTopicLabel({
-        topic,
-        block: topicTitle,
-        exam: pickDominantValue(meta.exams),
-        year: pickDominantValue(meta.years),
-        sourceTitle: pickDominantValue(meta.sourceTitles),
-      });
-
-      return {
-        topic,
-        topicTitle,
-        displayLabel: resolved.label,
-        description: resolved.description,
-        sourceHint: resolved.sourceHint,
-        rawBlock: resolved.rawBlock,
-        totalQuestions: meta.totalQuestions,
-        answered: totals.answered,
-        correct: totals.correct,
-        wrong: totals.wrong,
-        blank: totals.blank,
-        failedCount: failedByTopic.get(topic) ?? 0,
-        accuracy,
-        priority,
-      };
-    })
-    .sort((left, right) =>
-      left.topic.localeCompare(right.topic, "es", { numeric: true }),
-    );
+  return buildOfficialTopicMetrics(data as OfficialMetricAttempt[]).summaries;
 }
 
 export async function getRecentSessions(
