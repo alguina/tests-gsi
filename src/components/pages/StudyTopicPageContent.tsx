@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { useProfile } from "@/components/profile/ProfileProvider";
 import { PdfStudyReader } from "@/components/study/PdfStudyReader";
@@ -21,11 +20,10 @@ import { useStudyProgress } from "@/lib/useStudyProgress";
 
 type Props = {
   topic: TemaOficial;
-  previousTopic: TemaOficial | null;
   nextTopic: TemaOficial | null;
 };
 
-export function StudyTopicPageContent({ topic, previousTopic, nextTopic }: Props) {
+export function StudyTopicPageContent({ topic, nextTopic }: Props) {
   const { t } = useI18n();
   const { profile, isHydrated } = useProfile();
   const key = topicKey(topic);
@@ -41,12 +39,14 @@ export function StudyTopicPageContent({ topic, previousTopic, nextTopic }: Props
     if (!stored[key]) {
       saveStudyProgress(profile.id, updateStudyTopicProgress(stored, key, { status: "in-progress", page: 1 }));
     }
-  }, [key, profile?.id]);
+  }, [key, profile]);
 
-  function persist(update: { page?: number; status?: "in-progress" | "completed" }) {
+  const persist = useCallback((update: { page?: number; status?: "in-progress" | "completed" }) => {
     if (!profile?.id) return;
     saveStudyProgress(profile.id, updateStudyTopicProgress(getStudyProgress(profile.id), key, update));
-  }
+  }, [key, profile]);
+
+  const saveVisiblePage = useCallback((nextPage: number) => persist({ page: nextPage }), [persist]);
 
   return (
     <PageContainer width="full">
@@ -69,24 +69,32 @@ export function StudyTopicPageContent({ topic, previousTopic, nextTopic }: Props
                 <span className="text-sm text-text-muted">{t("study.savedAutomatically", { page })}</span>
               </div>
             </div>
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-2">
               <Button href={studyPdfPath(topic, "short")} variant="secondary">{t("study.openShort")}</Button>
               <Button href={`/test?mode=official-topic&topic=${key}&count=10`} variant="secondary">{t("study.topicTest")}</Button>
-              <Button variant={status === "completed" ? "subtle" : "primary"} onClick={() => persist({ status: status === "completed" ? "in-progress" : "completed" })}>
-                {status === "completed" ? t("study.markInProgress") : t("study.markCompleted")}
-              </Button>
             </div>
           </div>
           <p className="mt-3 border-t border-border-subtle pt-3 text-xs text-text-muted">{t("study.testMetricsNote")}</p>
         </Card>
       )}
 
-      <PdfStudyReader pdfUrl={longPdfUrl} title={`${key} ${topic.titulo}`} initialPage={page} onPageChange={(nextPage) => persist({ page: nextPage })} />
+      <PdfStudyReader pdfUrl={longPdfUrl} title={`${key} ${topic.titulo}`} initialPage={page} onPageChange={saveVisiblePage} />
 
-      <nav className="flex items-center justify-between gap-4" aria-label={t("study.topicNavigation")}>
-        {previousTopic ? <Link className="text-sm text-accent underline underline-offset-4" href={`/study/${topicKey(previousTopic)}`}>← {t("study.previous")}</Link> : <span />}
-        {nextTopic ? <Link className="text-sm text-accent underline underline-offset-4" href={`/study/${topicKey(nextTopic)}`}>{t("study.next")} →</Link> : <span />}
-      </nav>
+      <Card tone="muted">
+        <h2 className="text-lg font-semibold text-text-primary">{t("study.finishTitle")}</h2>
+        <p className="mt-2 text-sm leading-6 text-text-secondary">{t("study.finishHelp")}</p>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <Button variant={status === "completed" ? "subtle" : "primary"} onClick={() => persist({ status: status === "completed" ? "in-progress" : "completed" })}>
+            {status === "completed" ? t("study.markInProgress") : t("study.markCompleted")}
+          </Button>
+          <Button href={`/test?mode=official-topic&topic=${key}&count=10`} variant="secondary">{t("study.topicTest")}</Button>
+          {nextTopic ? (
+            <Button href={`/study/${topicKey(nextTopic)}`} variant="secondary">{t("study.next")} →</Button>
+          ) : (
+            <Button href="/study" variant="secondary">{t("study.back")}</Button>
+          )}
+        </div>
+      </Card>
     </PageContainer>
   );
 }
