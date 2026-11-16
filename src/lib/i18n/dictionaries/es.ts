@@ -82,6 +82,7 @@ export const es: Dictionary = {
   "study.pageCount": "{page} de {count}",
   "study.loading": "Cargando…",
   "study.fullscreen": "Pantalla completa",
+  "study.exitFullscreen": "Salir de pantalla completa",
   "study.openPdf": "Abrir PDF",
   "study.readerError": "No se ha podido cargar el lector. Puedes abrir el PDF completo directamente.",
   "study.zoom": "Zoom del documento",
