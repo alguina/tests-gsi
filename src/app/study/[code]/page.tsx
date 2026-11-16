@@ -14,7 +14,6 @@ export default async function StudyTopicPage({ params }: PageProps<"/study/[code
   return (
     <StudyTopicPageContent
       topic={topic}
-      previousTopic={TEMARIO_OFICIAL[index - 1] ?? null}
       nextTopic={TEMARIO_OFICIAL[index + 1] ?? null}
     />
   );

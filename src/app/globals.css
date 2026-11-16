@@ -139,8 +139,9 @@ body {
   border: 0;
   border-radius: 0;
   background: var(--background);
+  overflow: auto;
 }
 
-.pdf-study-reader:fullscreen > div:last-child {
-  min-height: calc(100vh - 3.5rem);
+.pdf-study-reader:fullscreen .pdf-reader-toolbar {
+  top: 0;
 }

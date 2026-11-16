@@ -13,46 +13,125 @@ type Props = {
   onPageChange: (page: number) => void;
 };
 
+type PdfPageProps = {
+  document: PdfDocument;
+  pageNumber: number;
+  title: string;
+  zoom: number;
+  trackingEnabled: boolean;
+  onVisible: (page: number) => void;
+};
+
+function PdfPage({ document, pageNumber, title, zoom, trackingEnabled, onVisible }: PdfPageProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [shouldRender, setShouldRender] = useState(false);
+
+  useEffect(() => {
+    const element = wrapperRef.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setShouldRender(true);
+      },
+      { rootMargin: "1200px 0px" },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!trackingEnabled) return;
+    const element = wrapperRef.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.3) onVisible(pageNumber);
+      },
+      { threshold: [0.3, 0.5, 0.7] },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [onVisible, pageNumber, trackingEnabled]);
+
+  useEffect(() => {
+    if (!shouldRender) return;
+    const wrapper = wrapperRef.current;
+    const canvas = canvasRef.current;
+    if (!wrapper || !canvas) return;
+
+    let cancelled = false;
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+    let renderTask: ReturnType<Awaited<ReturnType<PdfDocument["getPage"]>>["render"]> | null = null;
+
+    async function render() {
+      const pdfPage = await document.getPage(pageNumber);
+      if (cancelled || !wrapper || !canvas) return;
+      const baseViewport = pdfPage.getViewport({ scale: 1 });
+      const availableWidth = Math.min(960, Math.max(280, wrapper.clientWidth));
+      const cssScale = availableWidth / baseViewport.width;
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+      const viewport = pdfPage.getViewport({ scale: cssScale * pixelRatio });
+      const context = canvas.getContext("2d");
+      if (!context) return;
+
+      renderTask?.cancel();
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      canvas.style.width = `${Math.floor(viewport.width / pixelRatio)}px`;
+      canvas.style.height = `${Math.floor(viewport.height / pixelRatio)}px`;
+      renderTask = pdfPage.render({ canvas, canvasContext: context, viewport });
+      try {
+        await renderTask.promise;
+      } catch (error) {
+        if (!cancelled && !(error instanceof Error && error.name === "RenderingCancelledException")) throw error;
+      }
+    }
+
+    void render();
+    const resizeObserver = new ResizeObserver(() => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => void render(), 120);
+    });
+    resizeObserver.observe(wrapper);
+
+    return () => {
+      cancelled = true;
+      resizeObserver.disconnect();
+      if (resizeTimer) clearTimeout(resizeTimer);
+      renderTask?.cancel();
+    };
+  }, [document, pageNumber, shouldRender]);
+
+  return (
+    <div
+      ref={wrapperRef}
+      id={`pdf-page-${pageNumber}`}
+      data-pdf-page={pageNumber}
+      className="mx-auto flex aspect-[210/297] scroll-mt-32 items-start justify-center"
+      style={{ width: `${zoom}%`, maxWidth: `${9.6 * zoom}px` }}
+    >
+      {shouldRender ? (
+        <canvas ref={canvasRef} aria-label={`${title}, página ${pageNumber}`} className="h-auto max-w-full bg-white shadow-sm" />
+      ) : null}
+    </div>
+  );
+}
+
 export function PdfStudyReader({ pdfUrl, title, initialPage, onPageChange }: Props) {
   const { t } = useI18n();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const documentRef = useRef<PdfDocument | null>(null);
+  const containerRef = useRef<HTMLElement>(null);
   const initialPageRef = useRef(initialPage);
-  const renderVersionRef = useRef(0);
+  const visiblePageRef = useRef(Math.max(1, initialPage));
+  const [document, setDocument] = useState<PdfDocument | null>(null);
   const [page, setPage] = useState(Math.max(1, initialPage));
-  const [pageCount, setPageCount] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [zoom, setZoom] = useState(100);
+  const [trackingEnabled, setTrackingEnabled] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     initialPageRef.current = initialPage;
   }, [initialPage]);
-
-  const renderPage = useCallback(async (pageNumber: number) => {
-    const document = documentRef.current;
-    const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!document || !canvas || !container) return;
-
-    const version = ++renderVersionRef.current;
-    const pdfPage = await document.getPage(pageNumber);
-    const baseViewport = pdfPage.getViewport({ scale: 1 });
-    const availableWidth = Math.max(280, container.clientWidth - 32);
-    const cssScale = availableWidth / baseViewport.width;
-    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-    const renderViewport = pdfPage.getViewport({ scale: cssScale * pixelRatio });
-    const context = canvas.getContext("2d");
-    if (!context || version !== renderVersionRef.current) return;
-
-    canvas.width = Math.floor(renderViewport.width);
-    canvas.height = Math.floor(renderViewport.height);
-    canvas.style.width = `${Math.floor(renderViewport.width / pixelRatio)}px`;
-    canvas.style.height = `${Math.floor(renderViewport.height / pixelRatio)}px`;
-
-    await pdfPage.render({ canvas, canvasContext: context, viewport: renderViewport }).promise;
-    if (version === renderVersionRef.current) setIsLoading(false);
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,62 +140,38 @@ export function PdfStudyReader({ pdfUrl, title, initialPage, onPageChange }: Pro
     async function loadDocument() {
       try {
         setError(false);
-        setIsLoading(true);
+        setTrackingEnabled(false);
         const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-          "pdfjs-dist/build/pdf.worker.min.mjs",
-          import.meta.url,
-        ).toString();
+        pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
         loadingTask = pdfjs.getDocument(pdfUrl);
-        const document = await loadingTask.promise;
+        const loadedDocument = await loadingTask.promise;
         if (cancelled) return;
-        documentRef.current = document;
-        setPageCount(document.numPages);
-        const safePage = Math.min(Math.max(1, initialPageRef.current), document.numPages);
-        setPage(safePage);
-        await renderPage(safePage);
+        const savedPage = Math.min(Math.max(1, initialPageRef.current), loadedDocument.numPages);
+        setDocument(loadedDocument);
+        setPage(savedPage);
+
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          window.document.getElementById(`pdf-page-${savedPage}`)?.scrollIntoView({ block: "start" });
+          setTrackingEnabled(true);
+        }));
       } catch {
-        if (!cancelled) {
-          setError(true);
-          setIsLoading(false);
-        }
+        if (!cancelled) setError(true);
       }
     }
 
     void loadDocument();
     return () => {
       cancelled = true;
-      renderVersionRef.current += 1;
-      documentRef.current = null;
       void loadingTask?.destroy();
     };
-  }, [pdfUrl, renderPage]);
+  }, [pdfUrl]);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const observer = new ResizeObserver(() => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => void renderPage(page), 100);
-    });
-    observer.observe(container);
-    return () => {
-      observer.disconnect();
-      if (timer) clearTimeout(timer);
-    };
-  }, [page, renderPage]);
-
-  function goToPage(nextPage: number) {
-    if (!pageCount) return;
-    const safePage = Math.min(Math.max(1, nextPage), pageCount);
-    if (safePage === page) return;
-    setPage(safePage);
-    setIsLoading(true);
-    onPageChange(safePage);
-    void renderPage(safePage);
-    containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+  const handleVisiblePage = useCallback((visiblePage: number) => {
+    if (visiblePageRef.current === visiblePage) return;
+    visiblePageRef.current = visiblePage;
+    setPage(visiblePage);
+    onPageChange(visiblePage);
+  }, [onPageChange]);
 
   async function openFullscreen() {
     const element = containerRef.current;
@@ -129,30 +184,36 @@ export function PdfStudyReader({ pdfUrl, title, initialPage, onPageChange }: Pro
   }
 
   return (
-    <section ref={containerRef} className="pdf-study-reader scroll-mt-4 overflow-auto rounded-xl border border-border bg-surface" aria-label={t("study.reader")}>
-      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface p-3">
+    <section ref={containerRef} className="pdf-study-reader scroll-mt-4 overflow-x-auto rounded-xl border border-border bg-surface" aria-label={t("study.reader")}>
+      <div className="pdf-reader-toolbar sticky top-[72px] z-10 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface/95 p-3 backdrop-blur">
+        <span className="text-sm tabular-nums text-text-secondary">{document ? t("study.pageCount", { page, count: document.numPages }) : t("study.loading")}</span>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" size="sm" disabled={page <= 1 || !pageCount} onClick={() => goToPage(page - 1)}>{t("study.previousPage")}</Button>
-          <span className="min-w-20 text-center text-sm tabular-nums text-text-secondary">{pageCount ? t("study.pageCount", { page, count: pageCount }) : t("study.loading")}</span>
-          <Button variant="secondary" size="sm" disabled={!pageCount || page >= pageCount} onClick={() => goToPage(page + 1)}>{t("study.nextPage")}</Button>
-        </div>
-        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-md border border-border bg-surface" aria-label={t("study.zoom")}>
+            <button type="button" className="min-h-8 px-3 text-sm text-text-primary disabled:opacity-40" disabled={zoom <= 60} aria-label={t("study.zoomOut")} onClick={() => setZoom((value) => Math.max(60, value - 10))}>−</button>
+            <span className="min-w-12 text-center text-xs tabular-nums text-text-secondary">{zoom}%</span>
+            <button type="button" className="min-h-8 px-3 text-sm text-text-primary disabled:opacity-40" disabled={zoom >= 160} aria-label={t("study.zoomIn")} onClick={() => setZoom((value) => Math.min(160, value + 10))}>+</button>
+          </div>
           <Button variant="subtle" size="sm" onClick={() => void openFullscreen()}>{t("study.fullscreen")}</Button>
           <a className="inline-flex min-h-8 items-center rounded-md px-3 text-xs font-medium text-accent underline underline-offset-4" href={pdfUrl} target="_blank" rel="noreferrer">{t("study.openPdf")}</a>
         </div>
       </div>
 
-      <div className="relative flex min-h-[60vh] justify-center bg-surface-muted p-4">
-        {isLoading && !error ? <p className="absolute top-8 text-sm text-text-muted">{t("study.loading")}</p> : null}
-        {error ? (
-          <div className="m-auto max-w-md text-center">
+      {error ? (
+        <div className="flex min-h-[60vh] items-center justify-center p-6 text-center">
+          <div className="max-w-md">
             <p className="text-sm text-text-secondary">{t("study.readerError")}</p>
             <Button href={pdfUrl} variant="secondary" className="mt-4">{t("study.openPdf")}</Button>
           </div>
-        ) : (
-          <canvas ref={canvasRef} aria-label={`${title}, ${t("study.pageCount", { page, count: pageCount ?? "…" })}`} className="h-fit max-w-full bg-white shadow-sm" />
-        )}
-      </div>
+        </div>
+      ) : document ? (
+        <div className="space-y-4 bg-surface-muted p-3 sm:p-4">
+          {Array.from({ length: document.numPages }, (_, index) => (
+            <PdfPage key={index + 1} document={document} pageNumber={index + 1} title={title} zoom={zoom} trackingEnabled={trackingEnabled} onVisible={handleVisiblePage} />
+          ))}
+        </div>
+      ) : (
+        <div className="flex min-h-[60vh] items-center justify-center text-sm text-text-muted">{t("study.loading")}</div>
+      )}
     </section>
   );
 }
