@@ -2,17 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useI18n } from "@/lib/i18n/useI18n";
+import {
+  applyThemePreference,
+  getCurrentTheme,
+  THEME_CHANGE_EVENT,
+  THEME_STORAGE_KEY,
+  type Theme,
+} from "@/lib/theme";
 import { cn } from "@/lib/ui/cn";
 import { controlStyles } from "@/lib/ui/tokens";
-
-type Theme = "light" | "dark";
-
-const THEME_STORAGE_KEY = "gsi-a2-theme";
-
-function applyTheme(theme: Theme) {
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme;
-}
 
 function ThemeIcon({ dark }: { dark: boolean }) {
   return (
@@ -43,29 +41,36 @@ export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    const currentTheme =
-      document.documentElement.dataset.theme === "dark" ? "dark" : "light";
-    setTheme(currentTheme);
+    const frame = requestAnimationFrame(() => setTheme(getCurrentTheme()));
 
     function handleStorage(event: StorageEvent) {
       if (
         event.key === THEME_STORAGE_KEY &&
         (event.newValue === "light" || event.newValue === "dark")
       ) {
-        applyTheme(event.newValue);
+        document.documentElement.dataset.theme = event.newValue;
+        document.documentElement.style.colorScheme = event.newValue;
         setTheme(event.newValue);
       }
     }
 
+    function handleThemeChange(event: Event) {
+      const nextTheme = (event as CustomEvent<Theme>).detail;
+      setTheme(nextTheme);
+    }
+
     window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
+    window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange);
+    };
   }, []);
 
   function toggleTheme() {
     const nextTheme: Theme = theme === "dark" ? "light" : "dark";
-    applyTheme(nextTheme);
-    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
-    setTheme(nextTheme);
+    applyThemePreference(nextTheme);
   }
 
   const isDark = theme === "dark";
