@@ -145,3 +145,7 @@ body {
 .pdf-study-reader:fullscreen .pdf-reader-toolbar {
   top: 0;
 }
+
+.pdf-study-reader:fullscreen .pdf-reader-pages {
+  padding-bottom: 6rem;
+}

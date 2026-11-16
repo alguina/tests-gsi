@@ -23,6 +23,31 @@ type Props = {
   nextTopic: TemaOficial | null;
 };
 
+type CompletionActionsProps = {
+  topicKeyValue: string;
+  status: "not-started" | "in-progress" | "completed";
+  nextTopic: TemaOficial | null;
+  compact?: boolean;
+  onToggleCompleted: () => void;
+};
+
+function CompletionActions({ topicKeyValue, status, nextTopic, compact, onToggleCompleted }: CompletionActionsProps) {
+  const { t } = useI18n();
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Button size={compact ? "sm" : "md"} variant={status === "completed" ? "subtle" : "primary"} onClick={onToggleCompleted}>
+        {status === "completed" ? t("study.markInProgress") : t("study.markCompleted")}
+      </Button>
+      <Button size={compact ? "sm" : "md"} href={`/test?mode=official-topic&topic=${topicKeyValue}&count=10`} variant="secondary">{t("study.topicTest")}</Button>
+      {nextTopic ? (
+        <Button size={compact ? "sm" : "md"} href={`/study/${topicKey(nextTopic)}`} variant="secondary">{t("study.next")} →</Button>
+      ) : (
+        <Button size={compact ? "sm" : "md"} href="/study" variant="secondary">{t("study.back")}</Button>
+      )}
+    </div>
+  );
+}
+
 export function StudyTopicPageContent({ topic, nextTopic }: Props) {
   const { t } = useI18n();
   const { profile, isHydrated } = useProfile();
@@ -47,6 +72,7 @@ export function StudyTopicPageContent({ topic, nextTopic }: Props) {
   }, [key, profile]);
 
   const saveVisiblePage = useCallback((nextPage: number) => persist({ page: nextPage }), [persist]);
+  const toggleCompleted = useCallback(() => persist({ status: status === "completed" ? "in-progress" : "completed" }), [persist, status]);
 
   return (
     <PageContainer width="full">
@@ -78,23 +104,23 @@ export function StudyTopicPageContent({ topic, nextTopic }: Props) {
         </Card>
       )}
 
-      <PdfStudyReader pdfUrl={longPdfUrl} title={`${key} ${topic.titulo}`} initialPage={page} onPageChange={saveVisiblePage} />
-
-      <Card tone="muted">
-        <h2 className="text-lg font-semibold text-text-primary">{t("study.finishTitle")}</h2>
-        <p className="mt-2 text-sm leading-6 text-text-secondary">{t("study.finishHelp")}</p>
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <Button variant={status === "completed" ? "subtle" : "primary"} onClick={() => persist({ status: status === "completed" ? "in-progress" : "completed" })}>
-            {status === "completed" ? t("study.markInProgress") : t("study.markCompleted")}
-          </Button>
-          <Button href={`/test?mode=official-topic&topic=${key}&count=10`} variant="secondary">{t("study.topicTest")}</Button>
-          {nextTopic ? (
-            <Button href={`/study/${topicKey(nextTopic)}`} variant="secondary">{t("study.next")} →</Button>
-          ) : (
-            <Button href="/study" variant="secondary">{t("study.back")}</Button>
-          )}
+      <PdfStudyReader
+        pdfUrl={longPdfUrl}
+        title={`${key} ${topic.titulo}`}
+        initialPage={page}
+        onPageChange={saveVisiblePage}
+        fullscreenActions={<CompletionActions topicKeyValue={key} status={status} nextTopic={nextTopic} compact onToggleCompleted={toggleCompleted} />}
+      >
+        <div className="border-t border-border bg-background p-4 sm:p-6">
+          <Card tone="muted" className="mx-auto max-w-4xl">
+            <h2 className="text-lg font-semibold text-text-primary">{t("study.finishTitle")}</h2>
+            <p className="mt-2 text-sm leading-6 text-text-secondary">{t("study.finishHelp")}</p>
+            <div className="mt-4">
+              <CompletionActions topicKeyValue={key} status={status} nextTopic={nextTopic} onToggleCompleted={toggleCompleted} />
+            </div>
+          </Card>
         </div>
-      </Card>
+      </PdfStudyReader>
     </PageContainer>
   );
 }

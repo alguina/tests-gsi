@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useI18n } from "@/lib/i18n/useI18n";
@@ -11,6 +12,8 @@ type Props = {
   title: string;
   initialPage: number;
   onPageChange: (page: number) => void;
+  children?: ReactNode;
+  fullscreenActions?: ReactNode;
 };
 
 type PdfPageProps = {
@@ -118,7 +121,7 @@ function PdfPage({ document, pageNumber, title, zoom, trackingEnabled, onVisible
   );
 }
 
-export function PdfStudyReader({ pdfUrl, title, initialPage, onPageChange }: Props) {
+export function PdfStudyReader({ pdfUrl, title, initialPage, onPageChange, children, fullscreenActions }: Props) {
   const { t } = useI18n();
   const containerRef = useRef<HTMLElement>(null);
   const initialPageRef = useRef(initialPage);
@@ -128,10 +131,19 @@ export function PdfStudyReader({ pdfUrl, title, initialPage, onPageChange }: Pro
   const [zoom, setZoom] = useState(100);
   const [trackingEnabled, setTrackingEnabled] = useState(false);
   const [error, setError] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     initialPageRef.current = initialPage;
   }, [initialPage]);
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setIsFullscreen(window.document.fullscreenElement === containerRef.current);
+    }
+    window.document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => window.document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -173,9 +185,13 @@ export function PdfStudyReader({ pdfUrl, title, initialPage, onPageChange }: Pro
     onPageChange(visiblePage);
   }, [onPageChange]);
 
-  async function openFullscreen() {
+  async function toggleFullscreen() {
     const element = containerRef.current;
     if (!element) return;
+    if (window.document.fullscreenElement === element) {
+      await window.document.exitFullscreen();
+      return;
+    }
     if (element.requestFullscreen) {
       await element.requestFullscreen();
       return;
@@ -193,7 +209,7 @@ export function PdfStudyReader({ pdfUrl, title, initialPage, onPageChange }: Pro
             <span className="min-w-12 text-center text-xs tabular-nums text-text-secondary">{zoom}%</span>
             <button type="button" className="min-h-8 px-3 text-sm text-text-primary disabled:opacity-40" disabled={zoom >= 160} aria-label={t("study.zoomIn")} onClick={() => setZoom((value) => Math.min(160, value + 10))}>+</button>
           </div>
-          <Button variant="subtle" size="sm" onClick={() => void openFullscreen()}>{t("study.fullscreen")}</Button>
+          <Button variant="subtle" size="sm" onClick={() => void toggleFullscreen()}>{isFullscreen ? t("study.exitFullscreen") : t("study.fullscreen")}</Button>
           <a className="inline-flex min-h-8 items-center rounded-md px-3 text-xs font-medium text-accent underline underline-offset-4" href={pdfUrl} target="_blank" rel="noreferrer">{t("study.openPdf")}</a>
         </div>
       </div>
@@ -206,7 +222,7 @@ export function PdfStudyReader({ pdfUrl, title, initialPage, onPageChange }: Pro
           </div>
         </div>
       ) : document ? (
-        <div className="space-y-4 bg-surface-muted p-3 sm:p-4">
+        <div className="pdf-reader-pages space-y-4 bg-surface-muted p-3 sm:p-4">
           {Array.from({ length: document.numPages }, (_, index) => (
             <PdfPage key={index + 1} document={document} pageNumber={index + 1} title={title} zoom={zoom} trackingEnabled={trackingEnabled} onVisible={handleVisiblePage} />
           ))}
@@ -214,6 +230,13 @@ export function PdfStudyReader({ pdfUrl, title, initialPage, onPageChange }: Pro
       ) : (
         <div className="flex min-h-[60vh] items-center justify-center text-sm text-text-muted">{t("study.loading")}</div>
       )}
+      {children}
+      {isFullscreen && document && page === document.numPages && fullscreenActions ? (
+        <div className="fixed inset-x-0 bottom-0 z-20 flex flex-col gap-3 border-t border-border bg-surface/95 p-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5">
+          <p className="text-sm font-semibold text-text-primary">{t("study.finishTitle")}</p>
+          {fullscreenActions}
+        </div>
+      ) : null}
     </section>
   );
 }
