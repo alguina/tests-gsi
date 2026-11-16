@@ -75,18 +75,19 @@ export function StudyTopicPageContent({ topic, nextTopic }: Props) {
   const toggleCompleted = useCallback(() => persist({ status: status === "completed" ? "in-progress" : "completed" }), [persist, status]);
 
   return (
-    <PageContainer width="full">
+    <PageContainer width="full" innerClassName="gap-4 sm:gap-8">
       <PageHeader
+        className="pb-4 sm:pb-6 [&>div:first-child]:mb-4 sm:[&>div:first-child]:mb-7"
         backLink={{ href: "/study", label: t("study.back") }}
         eyebrow={`${t("study.topic")} ${key}`}
         title={topic.titulo}
-        description={t("study.topicDescription")}
+        description={<span className="hidden sm:inline">{t("study.topicDescription")}</span>}
       />
 
       {!isHydrated ? null : !profile ? (
         <Card tone="warning"><p className="text-sm text-text-secondary">{t("study.chooseProfile")}</p></Card>
       ) : (
-        <Card padding="sm">
+        <Card padding="sm" className="hidden sm:block">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">{t("study.topicStatus")}</p>
@@ -110,6 +111,12 @@ export function StudyTopicPageContent({ topic, nextTopic }: Props) {
         initialPage={page}
         onPageChange={saveVisiblePage}
         fullscreenActions={<CompletionActions topicKeyValue={key} status={status} nextTopic={nextTopic} compact onToggleCompleted={toggleCompleted} />}
+        settingsActions={(
+          <div className="grid gap-2">
+            <Button href={studyPdfPath(topic, "short")} variant="secondary" fullWidth>{t("study.openShort")}</Button>
+            <Button href={`/test?mode=official-topic&topic=${key}&count=10`} variant="secondary" fullWidth>{t("study.topicTest")}</Button>
+          </div>
+        )}
       >
         <div className="border-t border-border bg-background p-4 sm:p-6">
           <Card tone="muted" className="mx-auto max-w-4xl">
